@@ -4,6 +4,8 @@
 #include "stdio.h"
 #include "tchar.h"
 #include "tlhelp32.h"
+#include "WinNT.h"
+
 
 #define STR_MODULE_NAME					    (L"redirect.dll")
 #define STATUS_SUCCESS						(0x00000000L) 
@@ -354,8 +356,32 @@ INJECTDLL_EXIT:
 	return bRet;
 }
 
-BOOL CheckMalware()
+//typedef struct _IMAGE_DOS_HEADER {
+//    WORD   e_magic;          // DOS signature : 4D5A ("MZ")
+//    WORD   e_cblp;
+//    WORD   e_cp;
+//    WORD   e_crlc;
+//    WORD   e_cparhdr;
+//    WORD   e_minalloc;
+//    WORD   e_maxalloc;
+//    WORD   e_ss;
+//    WORD   e_sp;
+//    WORD   e_csum;
+//    WORD   e_ip;
+//    WORD   e_cs;
+//    WORD   e_lfarlc;
+//    WORD   e_ovno;
+//    WORD   e_res[4];
+//    WORD   e_oemid;
+//    WORD   e_oeminfo;
+//    WORD   e_res2[10];
+//    LONG   e_lfanew;         // offset to NT header 
+//} IMAGE_DOS_HEADER, * PIMAGE_DOS_HEADER;
+
+
+BOOL CheckMalware(HANDLE hProcess)
 {
+    IMAGE_DOS_HEADER idh ;
     TCHAR                   szProc[MAX_PATH] = L"iexplore.exe";
     DWORD                   dwPID = 0;
     HANDLE                  hSnapShot = INVALID_HANDLE_VALUE;
@@ -363,6 +389,13 @@ BOOL CheckMalware()
     BOOL                    bMore = FALSE;
     BOOL                    Mal = FALSE; //TRUE;
     
+    //FuncThread = GetProcAddress(hProcess, "ZwQueryInformationThread");
+    ReadProcessMemory(hProcess, (LPCVOID)0x00000000, &idh, sizeof(IMAGE_DOS_HEADER),NULL);
+    //printf("- e_magic : %02X\n", idh.e_magic);
+    //_tprintf(L"- e_magic : %02x\n", idh.e_magic);
+    DebugLog("- e_magic : [%x]\n", idh.e_magic);
+ 
+
      // Get the snapshot of the system
     pe.dwSize = sizeof(PROCESSENTRY32);
     hSnapShot = CreateToolhelp32Snapshot(TH32CS_SNAPALL, NULL);
@@ -388,10 +421,12 @@ BOOL CheckMalware()
         if (!_tcsicmp(pe.szExeFile, szProc))
         {
             Mal = TRUE;
+    
             CloseHandle(hSnapShot);
             return Mal;
         }
     }
+
     CloseHandle(hSnapShot);
     return Mal;
 }
@@ -480,22 +515,7 @@ NTSTATUS WINAPI NewZwResumeThread(HANDLE ThreadHandle, PULONG SuspendCount)
         goto __NTRESUMETHREAD_END;
     }
 
-    // check malware
-    DebugLog("NewZwResumeThread() -> CheckMalware() : start!!!\n");
-    if (CheckMalware())
-    {
-        if (!(hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, dwPID)))
-        {
-            DebugLog("InjectDll() : OpenProcess(%d) failed!!! [%d]\n", dwPID, GetLastError());
-            return NULL;
-        }
-
-        if (!TerminateProcess(hProcess, 0))
-        {
-            DebugLog("CheckMalware() : ExitProcess() failed!!! [%d]\n");
-            return NULL;
-        }
-    }
+    
 
 __NTRESUMETHREAD_END:
 
@@ -503,6 +523,23 @@ __NTRESUMETHREAD_END:
                       (PROC)NewZwResumeThread, g_pZWRT) )
     {
         DebugLog("NewZwResumeThread() : hook_by_code() failed!!!\n");
+    }
+
+    // check malware
+    DebugLog("NewZwResumeThread() -> CheckMalware() : start!!!\n");
+    if (!(hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, dwPID)))
+    {
+        DebugLog("InjectDll() : OpenProcess(%d) failed!!! [%d]\n", dwPID, GetLastError());
+        return NULL;
+    }
+
+    if (CheckMalware(hProcess))
+    {
+        if (!TerminateProcess(hProcess, 0))
+        {
+            DebugLog("CheckMalware() : ExitProcess() failed!!! [%d]\n");
+            return NULL;
+        }
     }
 
     DebugLog("NewZwResumeThread() : end!!!\n");

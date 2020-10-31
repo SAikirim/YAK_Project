@@ -1,0 +1,4 @@
+﻿  redirect.cpp
+C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(217,5): warning C4996: 'GetVersionExW': deprecated로 선언되었습니다.
+  LINK : C:\Users\user\source\repos\Yak_project\redirect\Debug\redirect.dll을(를) 찾을 수 없거나 마지막 증분 링크에 의해 빌드되지 않았습니다. 전체 링크를 수행하고 있습니다.
+  redirect.vcxproj -> C:\Users\user\source\repos\Yak_project\redirect\Debug\redirect.dll
