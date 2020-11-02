@@ -5,6 +5,7 @@
 #include "tchar.h"
 #include "tlhelp32.h"
 #include "WinNT.h"
+#include <Python.h>
 
 
 #define STR_MODULE_NAME					    (L"redirect.dll")
@@ -356,7 +357,7 @@ INJECTDLL_EXIT:
 	return bRet;
 }
 
-//typedef struct _IMAGE_DOS_HEADER {
+//typedef struct MY_IMAGE_DOS_HEADER {
 //    WORD   e_magic;          // DOS signature : 4D5A ("MZ")
 //    WORD   e_cblp;
 //    WORD   e_cp;
@@ -376,8 +377,74 @@ INJECTDLL_EXIT:
 //    WORD   e_oeminfo;
 //    WORD   e_res2[10];
 //    LONG   e_lfanew;         // offset to NT header 
-//} IMAGE_DOS_HEADER, * PIMAGE_DOS_HEADER;
+//}IMAGE_DOS_HEADER, * PIMAGE_DOS_HEADER;
 
+bool CheckPE(HANDLE hFile)
+{
+    IMAGE_DOS_HEADER* pDos;
+    IMAGE_NT_HEADERS* pNt;
+    IMAGE_FILE_HEADER* pFile;
+    IMAGE_OPTIONAL_HEADER* pOption;
+    IMAGE_DATA_DIRECTORY* pDataDir;
+    IMAGE_SECTION_HEADER* pSection;
+    DWORD NumberofSections;
+    DWORD NumberofData;
+    DWORD PointertoRawdata;
+    DWORD SizeofRawdata;
+    DWORD dwSize;
+
+    HANDLE hMap = CreateFileMapping(hFile, 0, PAGE_READONLY, 0, 0, 0);
+    void* pBase = MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
+
+
+    /* (BYTE *)는 그 주소와 상수를 더하기 위해 필요함 */
+    pDos = (IMAGE_DOS_HEADER*)pBase;
+    pNt = (IMAGE_NT_HEADERS*)(pDos->e_lfanew + (BYTE*)pDos);
+    pFile = (IMAGE_FILE_HEADER*)((BYTE*)pNt + 4);
+    pOption = (IMAGE_OPTIONAL_HEADER*)((BYTE*)pNt + 0x18);
+
+    if (pDos->e_magic != 0x5a4d || pNt->Signature != 0x4550)
+    {
+        return FALSE;
+    }
+
+    NumberofSections = pFile->NumberOfSections;
+    NumberofData = pOption->NumberOfRvaAndSizes;
+
+    pDataDir = (IMAGE_DATA_DIRECTORY*)((BYTE*)pOption + 0x60);
+    pSection = (IMAGE_SECTION_HEADER*)((BYTE*)pDataDir + (NumberofData * 8));
+
+    for (int i = 0; i < NumberofSections - 1; i++)
+    {
+        pSection++; // 마지막 섹션으로 이동
+    }
+
+    PointertoRawdata = pSection->PointerToRawData;
+    SizeofRawdata = pSection->SizeOfRawData;
+    dwSize = GetFileSize(hFile, &dwSize);
+
+    UnmapViewOfFile(pBase);
+    CloseHandle(hMap);
+
+    /* 실제 파일의 사이즈가 PE 구조에 나타난 크기 보다 작을 경우 FALSE 반환 */
+    if (PointertoRawdata + SizeofRawdata > dwSize)
+    {
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+int Python()
+{
+    Py_Initialize();
+    PyRun_SimpleString("import sys; sys.path.append('C:\\Users\\user\\source\\repos\\Yak_project')");
+    PyRun_SimpleString("import callme;");
+    PyRun_SimpleString("callme.messageBox('test', 'hell', 0)");
+    Py_Finalize();
+
+    return 0;
+}
 
 BOOL CheckMalware(HANDLE hProcess)
 {
@@ -387,13 +454,18 @@ BOOL CheckMalware(HANDLE hProcess)
     HANDLE                  hSnapShot = INVALID_HANDLE_VALUE;
     PROCESSENTRY32          pe;
     BOOL                    bMore = FALSE;
-    BOOL                    Mal = FALSE; //TRUE;
+    TCHAR text[256];
+    MEMORY_BASIC_INFORMATION info = {};
     
-    //FuncThread = GetProcAddress(hProcess, "ZwQueryInformationThread");
-    ReadProcessMemory(hProcess, (LPCVOID)0x00000000, &idh, sizeof(IMAGE_DOS_HEADER),NULL);
-    //printf("- e_magic : %02X\n", idh.e_magic);
-    //_tprintf(L"- e_magic : %02x\n", idh.e_magic);
-    DebugLog("- e_magic : [%x]\n", idh.e_magic);
+    
+    //printf("Alloc = %p, base = %p, size = %d, protect = %d\n",
+    //    info.AllocationBase, info.BaseAddress, info.RegionSize, info.Protect);
+
+    // 메모리에서 PE 추출
+    VirtualQueryEx(hProcess, (LPCVOID)0x00000000, &info, sizeof info);
+    ReadProcessMemory(hProcess, info.BaseAddress, &idh, sizeof(IMAGE_DOS_HEADER),NULL);
+    wsprintf(text, L"idh.e_magic: %8x\n idh.e_lfanew: %x\n Python: %8d\n base = %p\n", idh.e_magic, idh.e_lfanew, Python(), info.BaseAddress);
+    MessageBox(NULL, text, _T("악성코드 발견!"), NULL);
  
 
      // Get the snapshot of the system
@@ -420,20 +492,18 @@ BOOL CheckMalware(HANDLE hProcess)
 
         if (!_tcsicmp(pe.szExeFile, szProc))
         {
-            Mal = TRUE;
-    
             CloseHandle(hSnapShot);
-            return Mal;
+            return TRUE;
         }
     }
 
     CloseHandle(hSnapShot);
-    return Mal;
+    return FALSE;
 }
 
 NTSTATUS WINAPI NewZwResumeThread(HANDLE ThreadHandle, PULONG SuspendCount)
 {
-    HANDLE                  hProcess = NULL;
+    HANDLE  hProcess = NULL;
     NTSTATUS status, statusThread;
     FARPROC pFunc = NULL, pFuncThread = NULL;
     DWORD dwPID = 0;
@@ -441,6 +511,7 @@ NTSTATUS WINAPI NewZwResumeThread(HANDLE ThreadHandle, PULONG SuspendCount)
     THREAD_BASIC_INFORMATION tbi;
     HMODULE hMod = NULL;
     TCHAR szModPath[MAX_PATH] = {0,};
+    TCHAR text[MAX_PATH];
 
     DebugLog("NewZwResumeThread() : start!!!\n");
 
@@ -489,6 +560,33 @@ NTSTATUS WINAPI NewZwResumeThread(HANDLE ThreadHandle, PULONG SuspendCount)
 
         if( !InjectDll(dwPID, szModPath) )
             DebugLog("NewZwResumeThread() : InjectDll(%d) failed!!!\n", dwPID);
+
+        // check malware
+        DebugLog("NewZwResumeThread() -> CheckMalware() : start!!!\n");
+        if (!(hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, dwPID)))
+        {
+            DebugLog("InjectDll() : OpenProcess(%d) failed!!! [%d]\n", dwPID, GetLastError());
+            return NULL;
+        }
+
+        if (CheckMalware(hProcess))
+        {
+            wsprintf(text, L"악성코드로 의심되는 프로세스(%d)가 실행되었습니다.\n 종료하시겠습니까??\n", dwPID);
+            if (MessageBox(NULL, text, _T("악성코드 발견!"), MB_ICONASTERISK | MB_YESNO) == IDYES)
+            {
+                if (!TerminateProcess(hProcess, 0))
+                {
+                    DebugLog("CheckMalware() : ExitProcess() failed!!!\n");
+                    return NULL;
+                }
+            }
+            else
+            {
+                DebugLog("CheckMalware() : ExitProcess() No!!!\n");
+            }
+        }
+        if (hProcess)
+            CloseHandle(hProcess);
     }
 
 
@@ -515,7 +613,6 @@ NTSTATUS WINAPI NewZwResumeThread(HANDLE ThreadHandle, PULONG SuspendCount)
         goto __NTRESUMETHREAD_END;
     }
 
-    
 
 __NTRESUMETHREAD_END:
 
@@ -524,24 +621,7 @@ __NTRESUMETHREAD_END:
     {
         DebugLog("NewZwResumeThread() : hook_by_code() failed!!!\n");
     }
-
-    // check malware
-    DebugLog("NewZwResumeThread() -> CheckMalware() : start!!!\n");
-    if (!(hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, dwPID)))
-    {
-        DebugLog("InjectDll() : OpenProcess(%d) failed!!! [%d]\n", dwPID, GetLastError());
-        return NULL;
-    }
-
-    if (CheckMalware(hProcess))
-    {
-        if (!TerminateProcess(hProcess, 0))
-        {
-            DebugLog("CheckMalware() : ExitProcess() failed!!! [%d]\n");
-            return NULL;
-        }
-    }
-
+    
     DebugLog("NewZwResumeThread() : end!!!\n");
 
     return status;
