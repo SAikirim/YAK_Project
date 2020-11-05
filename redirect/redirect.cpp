@@ -379,7 +379,7 @@ INJECTDLL_EXIT:
 //    LONG   e_lfanew;         // offset to NT header 
 //}IMAGE_DOS_HEADER, * PIMAGE_DOS_HEADER;
 
-bool CheckPE(HANDLE hFile)
+bool PE_Extraction(HANDLE hFile)
 {
     IMAGE_DOS_HEADER* pDos;
     IMAGE_NT_HEADERS* pNt;
@@ -446,27 +446,81 @@ int Python()
     return 0;
 }
 
+
 BOOL CheckMalware(HANDLE hProcess)
 {
-    IMAGE_DOS_HEADER idh ;
+    IMAGE_DOS_HEADER pDos;
+    IMAGE_NT_HEADERS pNt;
+    IMAGE_FILE_HEADER pFile;
+    IMAGE_OPTIONAL_HEADER* pOption;
+    IMAGE_DATA_DIRECTORY* pDataDir;
+    IMAGE_SECTION_HEADER* pSection;
+    DWORD NumberofSections;
+    DWORD NumberofData;
+    DWORD PointertoRawdata;
+    DWORD SizeofRawdata;
+    DWORD dwSize;
+
+    DWORD pBase;
+    MEMORY_BASIC_INFORMATION info = {};
+    DWORD nMem = 0x00010000;
+
+    TCHAR text[256];    // 디버거 출력용
+
+    // tset용
+    PROCESSENTRY32          pe;
     TCHAR                   szProc[MAX_PATH] = L"iexplore.exe";
     DWORD                   dwPID = 0;
     HANDLE                  hSnapShot = INVALID_HANDLE_VALUE;
-    PROCESSENTRY32          pe;
     BOOL                    bMore = FALSE;
-    TCHAR text[256];
-    MEMORY_BASIC_INFORMATION info = {};
-    
-    
+ 
+   
+
     //printf("Alloc = %p, base = %p, size = %d, protect = %d\n",
     //    info.AllocationBase, info.BaseAddress, info.RegionSize, info.Protect);
+    //GetSystemInfo(&si);
+    //nMem = (DWORD)si.lpMinimumApplicationAddress; //메모리 주소의 최소값을 구한다.
 
-    // 메모리에서 PE 추출
-    VirtualQueryEx(hProcess, (LPCVOID)0x00000000, &info, sizeof info);
-    ReadProcessMemory(hProcess, info.BaseAddress, &idh, sizeof(IMAGE_DOS_HEADER),NULL);
-    wsprintf(text, L"idh.e_magic: %8x\n idh.e_lfanew: %x\n Python: %8d\n base = %p\n", idh.e_magic, idh.e_lfanew, Python(), info.BaseAddress);
-    MessageBox(NULL, text, _T("악성코드 발견!"), NULL);
+    // 메모리에서 '0x5a4d' 찾기
+    while (nMem < 0x02000000)
+    {
+        nMem += 4;
+        VirtualQueryEx(hProcess, (LPCVOID)nMem, &info, sizeof info); // (LPCVOID)0x008d0400
+        ReadProcessMemory(hProcess, info.AllocationBase, &pBase, sizeof(DWORD), NULL);
+        //wsprintf(text, L"Python: %8d\n base = %p\n, Allocationbase = %p\n, nMem: %p\n, pBase: %p",
+        //    Python(), info.BaseAddress, info.AllocationBase, nMem, (DWORD)pBase);
+        //MessageBox(NULL, text, _T("test"), NULL);
+
+        
+        if ((DWORD)pBase == 0x00905a4d)
+        {
+            //wsprintf(text, L"Python: %8d\n base = %p\n, Allocationbase = %p\n, nMem: %p\n, pBase: %p",
+            //    Python(), info.BaseAddress, info.AllocationBase, (nMem), (DWORD)pBase);
+            //MessageBox(NULL, text, _T("test"), NULL);
+           //pBase = (DWORD)info.AllocationBase;
+            break;
+        }
+    }
+
+    //PE 추출
+    ReadProcessMemory(hProcess, (LPCVOID)info.AllocationBase, &pDos, sizeof(IMAGE_DOS_HEADER), NULL);
+   //pDos = (IMAGE_DOS_HEADER*)pBase;
+    wsprintf(text, L"idh.e_magic: %p\n idh.e_lfanew: %p\n Python: %8d\n base = %p\n, Allocationbase = %p\n, nMem: %p\n nMem_v:%p\n",
+        pDos.e_magic, pDos.e_lfanew, Python(), info.BaseAddress, info.AllocationBase, nMem, &nMem);
+    MessageBox(NULL, text, _T("악성코드 발견1"), NULL);
  
+    DWORD test = (pDos.e_lfanew + nMem);
+    //pNt = (IMAGE_NT_HEADERS*)(pDos.e_lfanew + nMem);
+    ReadProcessMemory(hProcess, (LPCVOID)(pDos.e_lfanew + nMem), &pNt, sizeof(IMAGE_NT_HEADERS), NULL);
+    wsprintf(text, L"pNt.Signature: %x\n pNt.OptionalHeader: %p\n pNt: %p\n pNt_p: %p\n test: %p\n",
+        pNt.Signature, pNt.OptionalHeader, pNt, &pNt, test);
+    MessageBox(NULL, text, _T("악성코드 발견2"), NULL);
+    
+    //pFile = (IMAGE_FILE_HEADER*)((BYTE*)pNt + 4);
+    ReadProcessMemory(hProcess, (LPCVOID)(&pNt + 4), &pFile, sizeof(IMAGE_FILE_HEADER), NULL);
+    wsprintf(text, L"idh.Signature: %x\n idh.OptionalHeader: %p\n pNt: %p\n",
+        pFile.Machine, pFile.Characteristics, &pFile);
+    MessageBox(NULL, text, _T("악성코드 발견3"), NULL);
 
      // Get the snapshot of the system
     pe.dwSize = sizeof(PROCESSENTRY32);

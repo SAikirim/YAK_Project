@@ -1,0 +1,2 @@
+C:\Users\user\source\repos\Yak_project\InjDll\Debug\InjDll32.exe
+C:\Users\user\source\repos\Yak_project\InjDll\Debug\InjDll32.pdb
