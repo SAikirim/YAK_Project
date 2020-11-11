@@ -1,11 +1,14 @@
 // redirect.cpp
 
+
+//#include <ntdef_luid.h>
+//#include "ntddk.h"
 #include "windows.h"
 #include "stdio.h"
 #include "tchar.h"
 #include "tlhelp32.h"
-#include "WinNT.h"
 #include <Python.h>
+
 
 
 #define STR_MODULE_NAME					    (L"redirect.dll")
@@ -71,7 +74,8 @@ BOOL SetPrivilege(LPCTSTR lpszPrivilege, BOOL bEnablePrivilege)
         DebugLog("OpenProcessToken error: %u\n", GetLastError());
         return FALSE;
     }
-
+    
+    // 로컬 시스템에 대한 LUID를 가져옴.
     if( !LookupPrivilegeValue(NULL,             // lookup privilege on local system
                               lpszPrivilege,    // privilege to lookup 
                               &luid) )          // receives LUID of privilege
@@ -435,8 +439,23 @@ bool PE_Extraction(HANDLE hFile)
     return TRUE;
 }
 
-int Python()
+int CheckWList_Python()
 {
+    return 1;
+}
+
+int Python(PVOID pImage)
+{
+    PIMAGE_DOS_HEADER pDos;
+    PIMAGE_NT_HEADERS pNtHeaders;
+    PIMAGE_FILE_HEADER pFile;
+
+    pDos = (PIMAGE_DOS_HEADER)pImage;
+    //ReadProcessMemory(hProcess, (LPCVOID)(pPeb + 0x8), pImage, sizeof(pImage), NULL);
+    pNtHeaders = (PIMAGE_NT_HEADERS)((PCHAR)pImage + pDos->e_lfanew); //((PCHAR)pImage + pDos->e_lfanew);   //((PCHAR)pImage + ((PIMAGE_DOS_HEADER)pImage)->e_lfanew);
+    pFile = (PIMAGE_FILE_HEADER)(pNtHeaders + 4);
+    pEntry = (PVOID)((PCHAR)pImage + pNtHeaders->OptionalHeader.AddressOfEntryPoint);
+
     Py_Initialize();
     PyRun_SimpleString("import sys; sys.path.append('C:\\Users\\user\\source\\repos\\Yak_project')");
     PyRun_SimpleString("import callme;");
@@ -446,35 +465,173 @@ int Python()
     return 0;
 }
 
-
-BOOL CheckMalware(HANDLE hProcess)
+typedef struct _PEB
 {
-    IMAGE_DOS_HEADER pDos;
-    IMAGE_NT_HEADERS pNt;
+    BYTE                          Reserved1[2];
+    BYTE                          BeingDebugged;
+    BYTE                          Reserved2[1];
+    PVOID                         Reserved3[2]; // Reserved3[1] points to PEB
+    //PPEB_LDR_DATA                 Ldr;
+    //PRTL_USER_PROCESS_PARAMETERS  ProcessParameters;
+    //BYTE                          Reserved4[104];
+    //PVOID                         Reserved5[52];
+    //PPS_POST_PROCESS_INIT_ROUTINE PostProcessInitRoutine;
+    //BYTE                          Reserved6[128];
+    //PVOID                         Reserved7[1];
+    //ULONG                         SessionId;
+} PEB, * PPEB;
+
+typedef struct _PROCESS_BASIC_INFORMATION {
+    LONG ExitStatus;    
+    PPEB PebBaseAddress;
+    ULONG_PTR AffinityMask;
+    LONG BasePriority;
+    ULONG_PTR UniqueProcessId;
+    ULONG_PTR InheritedFromUniqueProcessId;
+} PROCESS_BASIC_INFORMATION, * PPROCESS_BASIC_INFORMATION;
+
+//typedef struct _PROCESS_BASIC_INFORMATION {
+//    PVOID Reserved1;
+//    PPEB PebBaseAddress;
+//    PVOID Reserved2[2];
+//    ULONG_PTR UniqueProcessId;
+//    PVOID Reserved3;
+//} PROCESS_BASIC_INFORMATION;
+
+typedef enum _PROCESSINFOCLASS
+{
+    ProcessBasicInformation = 0,
+} PROCESSINFOCLASS, * PPROCESSINFOCLASS;
+
+
+typedef NTSTATUS(NTAPI* pNtQueryInformationProcess)
+(
+    HANDLE           ProcessHandle,
+    PROCESSINFOCLASS ProcessInformationClass,
+    PVOID            ProcessInformation,
+    ULONG            ProcessInformationLength,
+    PULONG           ReturnLength
+);
+
+
+//extern NTSTATUS(NTAPI* pNtQueryInformationProcess)(
+//    HANDLE ProcessHandle,
+//    PROCESSINFOCLASS ProcessInformationClass,
+//    PVOID ProcessInformation,
+//    ULONG ProcessInformationLength,
+//    PULONG ReturnLength);
+
+//
+
+BOOL CheckMalware(HANDLE hProcess, DWORD dwPid)
+{
+    PIMAGE_DOS_HEADER pDos;
+    PIMAGE_NT_HEADERS pNtHeaders;
+    PIMAGE_FILE_HEADER pFile;
+    /*IMAGE_NT_HEADERS pNt;
     IMAGE_FILE_HEADER pFile;
-    IMAGE_OPTIONAL_HEADER* pOption;
-    IMAGE_DATA_DIRECTORY* pDataDir;
-    IMAGE_SECTION_HEADER* pSection;
+    IMAGE_OPTIONAL_HEADER pOption;
+    IMAGE_DATA_DIRECTORY pDataDir;
+    IMAGE_SECTION_HEADER pSection;
     DWORD NumberofSections;
     DWORD NumberofData;
     DWORD PointertoRawdata;
     DWORD SizeofRawdata;
-    DWORD dwSize;
+    DWORD dwSize;*/
 
-    DWORD pBase;
-    MEMORY_BASIC_INFORMATION info = {};
-    DWORD nMem = 0x00010000;
+    NTSTATUS status;
+    PROCESS_BASIC_INFORMATION pbi;
+
+    PPEB pPeb;
+    PVOID pImage, pEntry;
+    //LONG e_lfanew;
+    //SIZE_T NumberOfBytesRead;
 
     TCHAR text[256];    // 디버거 출력용
 
-    // tset용
+    // tset용 나중에 제거
+    DWORD pBase;
+    MEMORY_BASIC_INFORMATION info = {};
+    DWORD nMem = 0x00000000; 
+
+    
+
+    // tset용 나중에 제거
     PROCESSENTRY32          pe;
     TCHAR                   szProc[MAX_PATH] = L"iexplore.exe";
     DWORD                   dwPID = 0;
     HANDLE                  hSnapShot = INVALID_HANDLE_VALUE;
     BOOL                    bMore = FALSE;
- 
-   
+
+    
+    // 멘토님 공유 링크 코드 참조/////////////////////////////////////////////////////////////////////////
+    NTSTATUS(NTAPI * pNtQueryInformationProcess)(HANDLE, /*enum _PROCESSINFOCLASS*/DWORD, PVOID, ULONG, PULONG) = NULL;
+    
+    //extern PVOID GetPeb(HANDLE ProcessHandle);
+    
+    // PEB definition comes from winternl.h. This is a 32-bit PEB.
+
+    // tset용 나중에 제거
+    //STARTUPINFO StartupInfo;
+    //PROCESS_INFORMATION ProcessInfo;
+
+    
+    pNtQueryInformationProcess = (NTSTATUS(NTAPI*)(HANDLE, /*enum _PROCESSINFOCLASS*/DWORD, PVOID, ULONG, PULONG))
+        GetProcAddress(
+            GetModuleHandle(TEXT("ntdll.dll")),
+            ("NtQueryInformationProcess"));
+
+    if (pNtQueryInformationProcess == NULL)
+    {
+        DebugLog("GetProcAddress(ntdll.dll, NtQueryInformationProcess) failed with error 0x%08X\n",
+            GetLastError());
+        return -1;
+    }
+
+    
+    //PVOID pPeb_t;
+    //FARPROC pFunc = NULL;
+
+
+    memset(&pbi, 0, sizeof(pbi));
+    //MessageBox(NULL, L"text1", _T("Current_process"), NULL);
+    status = pNtQueryInformationProcess(
+        GetCurrentProcess(), // hProcess,
+        ProcessBasicInformation,
+        &pbi,
+        sizeof(pbi),
+        NULL);
+    //MessageBox(NULL, L"text2", _T("Current_process"), NULL);
+    pPeb = NULL;
+
+    if (status == STATUS_SUCCESS) //if(NT_SUCCESS(status))
+    {
+        MessageBox(NULL, _T("STATUS_SUCCESS"), _T("STATUS_SUCCESS"), NULL);
+        pPeb = pbi.PebBaseAddress;
+    }
+
+    //pPeb = (PPEB)GetPeb(hProcess);    // GetCurrentProcess() // hProcess
+    pImage = pPeb->Reserved3[1];
+    pDos = (PIMAGE_DOS_HEADER)pImage;
+    //ReadProcessMemory(hProcess, (LPCVOID)(pPeb + 0x8), pImage, sizeof(pImage), NULL);
+    pNtHeaders = (PIMAGE_NT_HEADERS)((PCHAR)pImage + pDos->e_lfanew); //((PCHAR)pImage + pDos->e_lfanew);   //((PCHAR)pImage + ((PIMAGE_DOS_HEADER)pImage)->e_lfanew);
+    pFile = (PIMAGE_FILE_HEADER)(pNtHeaders + 4);
+    pEntry = (PVOID)((PCHAR)pImage + pNtHeaders->OptionalHeader.AddressOfEntryPoint);
+    
+    // 1. Dos Header 파이썬에 전달
+    Python(pImage);
+
+
+     wsprintf(text, L"PEB: 0x%08X\n Image base: 0x%08p\n e_lfanew: 0x%x\n Signature: 0x%08X\n TimeDateStamp: 0x%08x\n",
+         pPeb, pImage, pDos->e_lfanew, pNtHeaders->Signature, pNtHeaders->FileHeader.TimeDateStamp);
+    MessageBox(NULL, text, _T("Current_process"), NULL);
+
+    wsprintf(text, L"Characteristics: 0x%08x\n Characteristics: 0x%08x\n Python: %d\n Image entry point: 0x%p\n PID: %d\n",
+         pNtHeaders->FileHeader.Characteristics, pFile->Characteristics, Python(), pEntry, dwPid);
+    MessageBox(NULL, text, _T("Current_process2"), NULL);
+
+
+    //-----------------------------------------------------------------
 
     //printf("Alloc = %p, base = %p, size = %d, protect = %d\n",
     //    info.AllocationBase, info.BaseAddress, info.RegionSize, info.Protect);
@@ -482,45 +639,96 @@ BOOL CheckMalware(HANDLE hProcess)
     //nMem = (DWORD)si.lpMinimumApplicationAddress; //메모리 주소의 최소값을 구한다.
 
     // 메모리에서 '0x5a4d' 찾기
-    while (nMem < 0x02000000)
-    {
-        nMem += 4;
-        VirtualQueryEx(hProcess, (LPCVOID)nMem, &info, sizeof info); // (LPCVOID)0x008d0400
-        ReadProcessMemory(hProcess, info.AllocationBase, &pBase, sizeof(DWORD), NULL);
-        //wsprintf(text, L"Python: %8d\n base = %p\n, Allocationbase = %p\n, nMem: %p\n, pBase: %p",
-        //    Python(), info.BaseAddress, info.AllocationBase, nMem, (DWORD)pBase);
-        //MessageBox(NULL, text, _T("test"), NULL);
-
-        
-        if ((DWORD)pBase == 0x00905a4d)
-        {
-            //wsprintf(text, L"Python: %8d\n base = %p\n, Allocationbase = %p\n, nMem: %p\n, pBase: %p",
-            //    Python(), info.BaseAddress, info.AllocationBase, (nMem), (DWORD)pBase);
-            //MessageBox(NULL, text, _T("test"), NULL);
-           //pBase = (DWORD)info.AllocationBase;
-            break;
-        }
-    }
+    //int test_num = 0;
+    //while (nMem < 0x02000000)
+    //{
+    //    nMem += 2;
+    //    VirtualQueryEx(hProcess, (LPCVOID)nMem, &info, sizeof info); // (LPCVOID)0x008d0400
+    //    ReadProcessMemory(hProcess, (LPCVOID)info.AllocationBase, &pBase, sizeof(DWORD), NULL); // info.AllocationBase
+    //    //wsprintf(text, L"Python: %8d\n base = %p\n, Allocationbase = %p\n, nMem: %p\n, pBase: %p",
+    //    //    Python(), info.BaseAddress, info.AllocationBase, nMem, (DWORD)pBase);
+    //    //MessageBox(NULL, text, _T("test"), NULL);
+    //    
+    //    if ((WORD)pBase == 0x5a4d )    // 0x00905a4d
+    //    {
+    //        test_num++;
+    //        wsprintf(text, L"Python: %8d\n base = %p\n, Allocationbase = %p\n, nMem: %p\n, pBase: %p\n",
+    //            Python(), info.BaseAddress, info.AllocationBase, (nMem), (DWORD)pBase);
+    //        MessageBox(NULL, text, _T("test"), NULL);
+    //        if (test_num == 1)
+    //        {
+    //            //wsprintf(text, L"num: %8d\n  nMem: %p\n, pBase: %p\n",
+    //            //    test_num, (nMem), (DWORD)pBase);
+    //            //MessageBox(NULL, text, _T("test"), NULL);
+    //            break;
+    //        }
+    //       
+    //    }
+    //}
 
     //PE 추출
-    ReadProcessMemory(hProcess, (LPCVOID)info.AllocationBase, &pDos, sizeof(IMAGE_DOS_HEADER), NULL);
-   //pDos = (IMAGE_DOS_HEADER*)pBase;
-    wsprintf(text, L"idh.e_magic: %p\n idh.e_lfanew: %p\n Python: %8d\n base = %p\n, Allocationbase = %p\n, nMem: %p\n nMem_v:%p\n",
-        pDos.e_magic, pDos.e_lfanew, Python(), info.BaseAddress, info.AllocationBase, nMem, &nMem);
-    MessageBox(NULL, text, _T("악성코드 발견1"), NULL);
- 
-    DWORD test = (pDos.e_lfanew + nMem);
-    //pNt = (IMAGE_NT_HEADERS*)(pDos.e_lfanew + nMem);
-    ReadProcessMemory(hProcess, (LPCVOID)(pDos.e_lfanew + nMem), &pNt, sizeof(IMAGE_NT_HEADERS), NULL);
-    wsprintf(text, L"pNt.Signature: %x\n pNt.OptionalHeader: %p\n pNt: %p\n pNt_p: %p\n test: %p\n",
-        pNt.Signature, pNt.OptionalHeader, pNt, &pNt, test);
-    MessageBox(NULL, text, _T("악성코드 발견2"), NULL);
-    
-    //pFile = (IMAGE_FILE_HEADER*)((BYTE*)pNt + 4);
-    ReadProcessMemory(hProcess, (LPCVOID)(&pNt + 4), &pFile, sizeof(IMAGE_FILE_HEADER), NULL);
-    wsprintf(text, L"idh.Signature: %x\n idh.OptionalHeader: %p\n pNt: %p\n",
-        pFile.Machine, pFile.Characteristics, &pFile);
-    MessageBox(NULL, text, _T("악성코드 발견3"), NULL);
+   // ReadProcessMemory(hProcess, (LPCVOID)nMem, &pDos, sizeof(IMAGE_DOS_HEADER), NULL);
+   // LPCVOID Char = ((BYTE*)nMem + pDos.e_lfanew + 0x16);
+   // WORD pChar;
+   // ReadProcessMemory(hProcess, (LPCVOID)Char, &pChar, sizeof(WORD), NULL);
+   ////pDos = (IMAGE_DOS_HEADER*)pBase;
+   // wsprintf(text, L"idh.e_magic: %p\n idh.e_lfanew: %p\n Python: %8d\n base = %p\n, Allocationbase = %p\n, nMem: %p\n nMem_v:%p\n Characteristics:%lx\n",
+   //     pDos.e_magic, pDos.e_lfanew, Python(), info.BaseAddress, info.AllocationBase, nMem, &nMem, (WORD)pChar);
+   // MessageBox(NULL, text, _T("IMAGE_DOS_HEADER"), NULL);
+   // 
+   // 
+   // //pNt = (IMAGE_NT_HEADERS*)(pDos.e_lfanew + nMem);
+   // LPCVOID Nt = (LPCVOID)(pDos.e_lfanew + nMem);
+   // ReadProcessMemory(hProcess, Nt, &pNt, sizeof(IMAGE_NT_HEADERS), NULL); // (LPCVOID)(pDos.e_lfanew + nMem)
+   // wsprintf(text, L"pNt.Signature: %x\n pNt.OptionalHeader: %p\n pNt: %p\n Nt: %p\n nMem: %p\n",
+   //     pNt.Signature, pNt.OptionalHeader, (LPCVOID)&pNt, Nt, nMem);
+   // MessageBox(NULL, text, _T("IMAGE_NT_HEADERS"), NULL);
+   // 
+   // //pFile = (IMAGE_FILE_HEADER*)((BYTE*)Nt + 4);
+   // LPCVOID File = (BYTE*)Nt + 4;
+   // ReadProcessMemory(hProcess, (LPCVOID)File, &pFile, sizeof(IMAGE_FILE_HEADER), NULL);
+   // wsprintf(text, L"idh.Signature: %x\n TimeDateStamp: %x\n Characteristics: %p\n &pFile: %p\n File:%p\n Nt: %p\n nMem: %p\n",
+   //     pFile.Machine, pFile.TimeDateStamp, pFile.Characteristics, &pFile, File, (DWORD)Nt, (DWORD)nMem) ;
+   // MessageBox(NULL, text, _T("IMAGE_FILE_HEADER"), NULL);
+
+   // //pOption = (IMAGE_OPTIONAL_HEADER*)((BYTE*)pNt + 0x18);
+   // LPCVOID Option = (BYTE*)Nt + 0x18;
+   // ReadProcessMemory(hProcess, (LPCVOID)Option, &pOption, sizeof(IMAGE_OPTIONAL_HEADER), NULL);
+   // wsprintf(text, L"idh.Magic: %p\n ImageBase: %p\n DllCharacteristics: %p\n idh.NumberOfRvaAndSizes: %p\n pOption: %p\n Option:%p\n File:%p\n Nt: %p\n nMem: %p\n",
+   //     pOption.Magic, pOption.ImageBase, pOption.DllCharacteristics, pOption.NumberOfRvaAndSizes, &pOption, Option, File, (DWORD)Nt, (DWORD)nMem);
+   // MessageBox(NULL, text, _T("IMAGE_OPTIONAL_HEADER"), NULL);
+
+   // NumberofSections = pFile.NumberOfSections;
+   // NumberofData = pOption.NumberOfRvaAndSizes;
+   // LPCVOID DataDir = (IMAGE_DATA_DIRECTORY*)((BYTE*)Option + 0x60);   // 일반적으로 EXPORT table부터 시작
+   // ReadProcessMemory(hPro cess, (LPCVOID)DataDir, &pDataDir, sizeof(IMAGE_DATA_DIRECTORY), NULL);
+
+   // LPCVOID Section = (IMAGE_SECTION_HEADER*)((BYTE*)DataDir + (NumberofData * 8));   // Section 헤더 시작
+   // ReadProcessMemory(hProcess, (LPCVOID)Section, &pSection, sizeof(IMAGE_SECTION_HEADER), NULL);
+
+   // wsprintf(text, L"NumberofSections: %p\n NumberofData: %p\n pDataDir: %p\n pSection: %p\n",
+   //     NumberofSections, NumberofData, DataDir, Section);
+   // MessageBox(NULL, text, _T("IMAGE_OPTIONAL_HEADER"), NULL);
+
+   // //for (int i = 0; i < NumberofSections - 1; i++)
+   // //{
+   // //    pSection++; // 마지막 섹션으로 이동
+   // //}
+
+   // PointertoRawdata = pSection.PointerToRawData;
+   // SizeofRawdata = pSection.SizeOfRawData;
+   // DWORD SectionAddr = pOption.ImageBase + pSection.VirtualAddress;
+   // wsprintf(text, L"Name: %s\n, PointertoRawdata: %p\n SizeofRawdata: %p\n SetionAddr: %p\n",
+   //     pSection.Name, PointertoRawdata, SizeofRawdata, SectionAddr);
+   // MessageBox(NULL, text, _T("IMAGE_SECTION_HEADER"), NULL);
+
+   // // .text section dump
+   // // SectionAddr -> SizeofRawdata
+   // void* TestSection;
+   // ReadProcessMemory(hProcess, (LPCVOID)SectionAddr, &TestSection, SizeofRawdata, NULL);
+   // wsprintf(text, L"TestSection: %d\n, &TestSection: %p\n ",
+   //     sizeof(TestSection), TestSection);
+   // MessageBox(NULL, text, _T("IMAGE_SECTION_HEADER"), NULL);
 
      // Get the snapshot of the system
     pe.dwSize = sizeof(PROCESSENTRY32);
@@ -622,21 +830,23 @@ NTSTATUS WINAPI NewZwResumeThread(HANDLE ThreadHandle, PULONG SuspendCount)
             DebugLog("InjectDll() : OpenProcess(%d) failed!!! [%d]\n", dwPID, GetLastError());
             return NULL;
         }
-
-        if (CheckMalware(hProcess))
-        {
-            wsprintf(text, L"악성코드로 의심되는 프로세스(%d)가 실행되었습니다.\n 종료하시겠습니까??\n", dwPID);
-            if (MessageBox(NULL, text, _T("악성코드 발견!"), MB_ICONASTERISK | MB_YESNO) == IDYES)
+        if(CheckWList_Python())
+        { 
+            if (CheckMalware(hProcess, dwPID))
             {
-                if (!TerminateProcess(hProcess, 0))
+                wsprintf(text, L"악성코드로 의심되는 프로세스(%d)가 실행되었습니다.\n 종료하시겠습니까??\n", dwPID);
+                if (MessageBox(NULL, text, _T("악성코드 발견!"), MB_ICONASTERISK | MB_YESNO) == IDYES)
                 {
-                    DebugLog("CheckMalware() : ExitProcess() failed!!!\n");
-                    return NULL;
+                    if (!TerminateProcess(hProcess, 0))
+                    {
+                        DebugLog("CheckMalware() : ExitProcess() failed!!!\n");
+                        return NULL;
+                    }
                 }
-            }
-            else
-            {
-                DebugLog("CheckMalware() : ExitProcess() No!!!\n");
+                else
+                {
+                    DebugLog("CheckMalware() : ExitProcess() No!!!\n");
+                }
             }
         }
         if (hProcess)

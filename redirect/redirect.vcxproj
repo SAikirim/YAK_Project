@@ -14,6 +14,7 @@
     <ProjectGuid>{4D003E30-C35F-450E-9333-8C14DF87A8D2}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>redirect</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -42,9 +43,9 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <ExecutablePath>$(VC_ExecutablePath_x86);$(CommonExecutablePath);</ExecutablePath>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(IncludePath);C:\Python37\include;C:\Python27\include</IncludePath>
+    <IncludePath>C:\Users\user\source\repos\Yak_project;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(IncludePath);C:\Python37\include;C:\Python27\include</IncludePath>
     <ReferencePath>$(VC_ReferencesPath_x86);</ReferencePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(LibraryPath);C:\Python37\libs;C:\Python27\libs;C:\Python37\Lib;C:\Python27\Lib</LibraryPath>
+    <LibraryPath>C:\Users\user\source\repos\Yak_project;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(LibraryPath);C:\Python37\libs;C:\Python27\libs;C:\Python37\Lib;C:\Python27\Lib</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -57,6 +58,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;REDIRECT_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalIncludeDirectories>C:\Program Files\Windows Kits\10\Include\10.0.18362.0\km\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

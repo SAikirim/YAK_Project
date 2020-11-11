@@ -1,12 +1,16 @@
 ﻿  redirect.cpp
-C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(218,5): warning C4996: 'GetVersionExW': deprecated로 선언되었습니다.
-C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(417,23): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
-C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(461,11): warning C4101: 'SizeofRawdata' :참조되지 않은 지역 변수입니다.
-C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(457,27): warning C4101: 'pSection' :참조되지 않은 지역 변수입니다.
-C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(459,11): warning C4101: 'NumberofData' :참조되지 않은 지역 변수입니다.
-C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(456,27): warning C4101: 'pDataDir' :참조되지 않은 지역 변수입니다.
-C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(458,11): warning C4101: 'NumberofSections' :참조되지 않은 지역 변수입니다.
-C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(462,11): warning C4101: 'dwSize' :참조되지 않은 지역 변수입니다.
-C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(455,28): warning C4101: 'pOption' :참조되지 않은 지역 변수입니다.
-C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(460,11): warning C4101: 'PointertoRawdata' :참조되지 않은 지역 변수입니다.
+C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(222,5): warning C4996: 'GetVersionExW': deprecated로 선언되었습니다.
+C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(421,23): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
+C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(552,25): warning C4101: 'ProcessInfo' :참조되지 않은 지역 변수입니다.
+C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(527,11): warning C4101: 'SizeofRawdata' :참조되지 않은 지역 변수입니다.
+C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(523,26): warning C4101: 'pSection' :참조되지 않은 지역 변수입니다.
+C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(525,11): warning C4101: 'NumberofData' :참조되지 않은 지역 변수입니다.
+C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(522,26): warning C4101: 'pDataDir' :참조되지 않은 지역 변수입니다.
+C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(524,11): warning C4101: 'NumberofSections' :참조되지 않은 지역 변수입니다.
+C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(559,12): warning C4101: 'NumberOfBytesRead' :참조되지 않은 지역 변수입니다.
+C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(530,11): warning C4101: 'pBase' :참조되지 않은 지역 변수입니다.
+C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(551,17): warning C4101: 'StartupInfo' :참조되지 않은 지역 변수입니다.
+C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(528,11): warning C4101: 'dwSize' :참조되지 않은 지역 변수입니다.
+C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(521,27): warning C4101: 'pOption' :참조되지 않은 지역 변수입니다.
+C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(526,11): warning C4101: 'PointertoRawdata' :참조되지 않은 지역 변수입니다.
   redirect.vcxproj -> C:\Users\user\source\repos\Yak_project\redirect\Debug\redirect.dll
