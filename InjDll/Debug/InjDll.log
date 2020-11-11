@@ -1,4 +1,0 @@
-﻿  InjDll.cpp
-C:\Users\user\source\repos\Yak_project\InjDll\InjDll.cpp(70,5): warning C4996: 'GetVersionExW': deprecated로 선언되었습니다.
-C:\Users\user\source\repos\Yak_project\InjDll\InjDll.cpp(178): warning C4172: 지역 변수 또는 임시: pe의 주소를 반환하고 있습니다.
-  InjDll.vcxproj -> C:\Users\user\source\repos\Yak_project\InjDll\Debug\InjDll32.exe
