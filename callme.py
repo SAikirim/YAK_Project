@@ -5,7 +5,7 @@
 from tkinter import messagebox
 import ctypes
 import hashlib
-improt os
+import os
 
 def test( data ) :
     messagebox.showinfo("Basic Example", "a Basic Tk MessageBox : %s" % data)
@@ -19,3 +19,13 @@ def find_str():
     test = os.system('strings.exe test.bin | findstr /R [0-9]*\.[0-9]*\.[0-9]*\.[0-9]')
     print(test)
     return 0
+
+def PrintMyDef():
+    print("Hello, MyDef!")
+    return 1
+ 
+def Multiply(x, y):
+    return x * y
+
+
+PrintMyDef()

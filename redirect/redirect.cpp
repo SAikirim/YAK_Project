@@ -442,33 +442,35 @@ int CheckWList_Python()
     return 1;
 }
 
-int All_Check(int path) {
+int All_Check(TCHAR* path) {
     TCHAR text[256];    // 디버깅 출력용
     BYTE test[1130] = { 0, };
     int result = 0;
 
+    /*PyObject* pModule = PyImport_Import(PyUnicode_DecodeFSDefault("lief"));
+    if (pModule) {
+        MessageBox(NULL, L"PyImport_ImportModulestart : lief", _T("All_Check"), NULL);
+    }*/
     MessageBox(NULL, L"text:start", _T("All_Check"), NULL);
-    PyObject* mydef = PyImport_ImportModule("scripts.preprocessing_v1_3");
+    PyObject* mydef = PyImport_ImportModule("preprocessing_v1_4");  // preprocessing_v1_4
         if (mydef) {
             MessageBox(NULL, L"text:PyImport_ImportModule", _T("All_Check"), NULL);
-        PyObject* allcheck = PyObject_GetAttrString(mydef, "All_Check");
+        PyObject* allcheck = PyObject_GetAttrString(mydef, "All_Check");    // All_Check
         if (allcheck) {
-            MessageBox(NULL, L"text: PyObject_GetAttrString", _T("All_Check"), NULL);
-            PyObject* r = PyObject_CallFunction(allcheck, "i", path);
+            //MessageBox(NULL, L"text: PyObject_GetAttrString", _T("All_Check"), NULL);
+            PyObject* r = PyObject_CallFunction(allcheck, "u", path);   // path
             if (r) {
-                if (PyList_Check(r)) {
-                    MessageBox(NULL, L"text:PyList_Check", _T("All_Check"), NULL);
-                }
-                MessageBox(NULL, L"text: PyObject_CallFunction ", _T("All_Check"), NULL);
+                //MessageBox(NULL, L"text: PyObject_CallFunction ", _T("All_Check"), NULL);
                 PyArg_Parse(r, "i", &result);  // &result
-
+ 
                 Py_XDECREF(r);
             }
             Py_XDECREF(allcheck);
         }
         Py_XDECREF(mydef);
+        //Py_XDECREF(pModule);
     }
-    wsprintf(text, L" test: 0x%08x\n result: 0x%08x\n path: 0x%08x\n *path: 0x%08x\n",
+    wsprintf(text, L" test: 0x%08x\n result: 0x%08x\n path: %s\n *path: 0x%08x\n",
         *test, result, path, (DWORD)path);
     MessageBox(NULL, text, _T("All_Check"), NULL);
     return result;
@@ -479,26 +481,51 @@ int Python(PVOID pImage, HANDLE hProcess)
     PIMAGE_DOS_HEADER pDos;
     PIMAGE_NT_HEADERS pNtHeaders;
     PIMAGE_FILE_HEADER pFile;
+    PIMAGE_OPTIONAL_HEADER pOption;
     PVOID pEntry;
+    PIMAGE_DATA_DIRECTORY pDataDir;
+    PIMAGE_SECTION_HEADER pSection;
+    DWORD NumberofSections;
+    DWORD NumberofData;
+    DWORD PointertoRawdata;
+    DWORD SizeofRawdata;
+
 
     TCHAR text[256];    // 디버거 출력용
 
-    BYTE test[1130] = { 0, };
-    ReadProcessMemory(hProcess, (LPCVOID)(pImage), &test, sizeof(test), NULL);
+    DWORD test[286] = { 0, };  // 1144
+    ReadProcessMemory(hProcess, (LPCVOID)pImage, (LPVOID)&test, sizeof(test), NULL);
 
     pDos = (PIMAGE_DOS_HEADER)pImage;
     pNtHeaders = (PIMAGE_NT_HEADERS)((PCHAR)pImage + pDos->e_lfanew); //((PCHAR)pImage + pDos->e_lfanew);   //((PCHAR)pImage + ((PIMAGE_DOS_HEADER)pImage)->e_lfanew);
-    pFile = (PIMAGE_FILE_HEADER)(pNtHeaders + 4);
+    pFile = (PIMAGE_FILE_HEADER)((BYTE*)pNtHeaders + 4);
+    pOption = (PIMAGE_OPTIONAL_HEADER)((BYTE*)pNtHeaders + 0x18);
     pEntry = (PVOID)((PCHAR)pImage + pNtHeaders->OptionalHeader.AddressOfEntryPoint);
 
+    NumberofSections = pFile->NumberOfSections;
+    NumberofData = pOption->NumberOfRvaAndSizes;
 
+    pDataDir = (PIMAGE_DATA_DIRECTORY)((BYTE*)pOption + 0x60);
+    pSection = (PIMAGE_SECTION_HEADER)((BYTE*)pDataDir + (NumberofData * 8));
 
-    wsprintf(text, L"Image base: 0x%08p\n e_magic: 0x%x\n Signature: 0x%08X\n TimeDateStamp: 0x%08x\n",
-         pImage, pDos->e_magic, pNtHeaders->Signature, pNtHeaders->FileHeader.TimeDateStamp);
+    for (int i = 0; i < NumberofSections - 1; i++)
+    {
+        pSection++; // 마지막 섹션으로 이동
+    }
+
+    PointertoRawdata = pSection->PointerToRawData;
+    SizeofRawdata = pSection->SizeOfRawData;
+
+    wsprintf(text, L"Image base: 0x%08x\n e_magic: 0x%x\n Signature: 0x%08X\n TimeDateStamp: 0x%08x\n sizeof(test): %d\n",
+         pImage, pDos->e_magic, pNtHeaders->Signature, pNtHeaders->FileHeader.TimeDateStamp, sizeof(test));
     MessageBox(NULL, text, _T("Current_process"), NULL);
 
-    wsprintf(text, L"Characteristics: 0x%08x\n Characteristics: 0x%08x\n Image entry point: 0x%p\n test: 0x%x\n *test: 0x%x\n",
-        pNtHeaders->FileHeader.Characteristics, pFile->Characteristics, pEntry, test, (DWORD)*test);
+    wsprintf(text, L"Characteristics: 0x%08x\n Characteristics: 0x%08x\n Image entry point: 0x%p\n test: 0x%x\n *test: %x %x %x %x\n",
+        pNtHeaders->FileHeader.Characteristics, pFile->Characteristics, pEntry, test, test[0], test[1], test[2], test[3]);
+    MessageBox(NULL, text, _T("Current_process2"), NULL);
+
+    wsprintf(text, L"NumberofSections: 0x%08d\n Name: 0x%08s\n PointertoRawdata: 0x%x\n SizeofRawdata: 0x%x\n",
+        NumberofSections, pSection->Name, PointertoRawdata, SizeofRawdata);
     MessageBox(NULL, text, _T("Current_process2"), NULL);
 
     Py_Initialize();
@@ -506,15 +533,54 @@ int Python(PVOID pImage, HANDLE hProcess)
     //PyRun_SimpleString("import sys; sys.path.append('C:\\Users\\user\\source\\repos\\Yak_project')");
     //PyRun_SimpleString("import preprocessing_v1_3"); // callme 
     //PyRun_SimpleString("callme.messageBox('test', 'hell', 0)");
+    /*wsprintf(text, L"Py_GetPath(): %s\n",
+        Py_GetPath());
+    MessageBox(NULL, text, _T("Current_process2"), NULL);*/
+    Py_Finalize();
+
+    //int check = All_Check();
+    return 0; // check;
+}
+
+int Python2(HANDLE  hProcess)
+{
+    TCHAR    sProcessName[MAX_PATH] = { 0, };
+    DWORD   nSize = sizeof(CHAR) * MAX_PATH;;
+    DWORD   nLen = 0;
+    //HANDLE  hProcess = GetCurrentProcess();
+    TCHAR text[256];    // 디버거 출력용
+
+    ZeroMemory(sProcessName, nSize);
+    if (QueryFullProcessImageName(hProcess, 0, (LPWSTR)sProcessName, &nSize)) {
+        wsprintf(text, L"QueryFullProcessImageName: %s\n", sProcessName);
+        MessageBox(NULL, text, _T("Current_process2"), NULL);
+    }
+
+   /* WCHAR    s1[MAX_PATH] = L"r'";
+    WCHAR    s2[MAX_PATH] = L"'";
+
+    wcscat(s1, sProcessName);
+    wcscat(s1, s2);*/
+
+    /*wsprintf(text, L"test1: %s\n sProcessName: %08x", s1, sProcessName);
+    MessageBox(NULL, text, _T("s2"), NULL);*/
+
+
+    Py_Initialize();
+    PyRun_SimpleString("import sys");
+    //PyRun_SimpleString("import lief");
+    //PyRun_SimpleString("import sys; sys.path.append('C:\\Users\\user\\source\\repos\\Yak_project')");
+    //PyRun_SimpleString("sys.path.append('C:\\Python37\\Lib\\site-packages')");
+    //PyRun_SimpleString("import preprocessing_v1_3"); // callme 
+    //PyRun_SimpleString("callme.messageBox('test', 'hell', 0)");
     wsprintf(text, L"Py_GetPath(): %s\n",
         Py_GetPath());
     MessageBox(NULL, text, _T("Current_process2"), NULL);
 
-    int check = All_Check(8);
-    return check;
+    int check = All_Check(sProcessName);
     Py_Finalize();
+    return check;
 
-    
 }
 
 typedef struct _PEB
@@ -649,18 +715,18 @@ BOOL CheckMalware(HANDLE hProcess, DWORD dwPid)
     memset(&pbi, 0, sizeof(pbi));
     //MessageBox(NULL, L"text1", _T("Current_process"), NULL);
     status = pNtQueryInformationProcess(
-        GetCurrentProcess(), // hProcess,
+        hProcess, // hProcess : calc.exe,   // GetCurrentProcess() : explorer.exe
         ProcessBasicInformation,
         &pbi,
         sizeof(pbi),
         NULL);
     //MessageBox(NULL, L"text2", _T("Current_process"), NULL);
-    pPeb = NULL;
+    pPeb = pbi.PebBaseAddress;
 
-    if (status == STATUS_SUCCESS) //if(NT_SUCCESS(status))
+    if (status != STATUS_SUCCESS) //if(NT_SUCCESS(status))
     {
-        MessageBox(NULL, _T("STATUS_SUCCESS"), _T("STATUS_SUCCESS"), NULL);
-        pPeb = pbi.PebBaseAddress;
+        MessageBox(NULL, _T("STATUS_NOT_SUCCESS"), _T("STATUS_SUCCESS"), NULL);
+        pPeb = NULL;
     }
 
     //pPeb = (PPEB)GetPeb(hProcess);    // GetCurrentProcess() // hProcess
@@ -672,10 +738,13 @@ BOOL CheckMalware(HANDLE hProcess, DWORD dwPid)
     //pFile = (PIMAGE_FILE_HEADER)(pNtHeaders + 4);
     //pEntry = (PVOID)((PCHAR)pImage + pNtHeaders->OptionalHeader.AddressOfEntryPoint);
     
-    // 데이터 전달
-    result = Python(pImage, hProcess);
+    // 파일에서 추출
+    result = Python2(hProcess);
 
-    wsprintf(text, L"Python: %d\n  PID: %d\n",
+    // 데이터 전달
+    //result = Python(pImage, hProcess);
+
+    wsprintf(text, L"Python2: %d\n  PID: %d\n",
         result, dwPid);
     MessageBox(NULL, text, _T("Last Check"), NULL);
 

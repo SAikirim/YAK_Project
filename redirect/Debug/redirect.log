@@ -1,4 +1,0 @@
-﻿  redirect.cpp
-C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(220,5): warning C4996: 'GetVersionExW': deprecated로 선언되었습니다.
-C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(419,23): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
-  redirect.vcxproj -> C:\Users\user\source\repos\Yak_project\redirect\Debug\redirect.dll
