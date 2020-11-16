@@ -571,7 +571,7 @@ int Python2(HANDLE  hProcess)
 
 
     Py_Initialize();
-    PyRun_SimpleString("import sys; sys.path.append('.')");
+    PyRun_SimpleString("import sys\n sys.path.append('.')");
     //PyRun_SimpleString("import lief");
     //PyRun_SimpleString("import sys; sys.path.append('C:\\Users\\user\\source\\repos\\Yak_project')");
     //PyRun_SimpleString("sys.path.append('C:\\Python37\\Lib\\site-packages')");
@@ -581,8 +581,8 @@ int Python2(HANDLE  hProcess)
         Py_GetPath());
     MessageBox(NULL, text, _T("Current_process2"), NULL);
 
-    //TCHAR textt[256] = L"C:\\Users\\user\\source\\repos\\Yak_project\\infected.vir";
-    int check = All_Check(sProcessName);    // "nc.exe" // sProcessName    // "infected.vir"   // C:\Users\user\source\repos\Yak_project\infected.vir"
+    TCHAR textt[256] = L"C:\\Users\\user\\source\\repos\\Yak_project\\infected.vir";
+    int check = All_Check(textt);    // "nc.exe" // sProcessName    // "infected.vir"   // C:\Users\user\source\repos\Yak_project\infected.vir"
     Py_Finalize();
     return check;
     

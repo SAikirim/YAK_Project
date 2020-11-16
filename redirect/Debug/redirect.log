@@ -1,7 +1,6 @@
 ﻿  redirect.cpp
-C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(9,10): warning C4067: 전처리기 지시문 다음에 예기치 않은 토큰이 있습니다. 줄 바꿈 문자가 필요합니다.
-C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(221,5): warning C4996: 'GetVersionExW': deprecated로 선언되었습니다.
-C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(420,23): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
-C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(516,23): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
-C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(685,29): warning C4101: 'pe' :참조되지 않은 지역 변수입니다.
+C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(220,5): warning C4996: 'GetVersionExW': deprecated로 선언되었습니다.
+C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(419,23): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
+C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(515,23): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
+C:\Users\user\source\repos\Yak_project\redirect\redirect.cpp(684,29): warning C4101: 'pe' :참조되지 않은 지역 변수입니다.
   redirect.vcxproj -> C:\Users\user\source\repos\Yak_project\redirect\Debug\redirect.dll
