@@ -6,6 +6,7 @@
 #include "tchar.h"
 #include "tlhelp32.h"
 #include <Python.h>
+#include "stdio.h""
 
 
 
@@ -444,7 +445,8 @@ int CheckWList_Python()
 
 int All_Check(TCHAR* path) {
     TCHAR text[256];    // 디버깅 출력용
-    BYTE test[1130] = { 0, };
+    TCHAR test[256] = L"NO,하이";    //{ 0, };
+    char ttest[256] = "no";
     int result = 0;
 
     /*PyObject* pModule = PyImport_Import(PyUnicode_DecodeFSDefault("lief"));
@@ -452,17 +454,19 @@ int All_Check(TCHAR* path) {
         MessageBox(NULL, L"PyImport_ImportModulestart : lief", _T("All_Check"), NULL);
     }*/
     MessageBox(NULL, L"text:start", _T("All_Check"), NULL);
-    PyObject* mydef = PyImport_ImportModule("preprocessing_v1_4");  // preprocessing_v1_4
+    PyObject* mydef = PyImport_ImportModule("Preprocessing_v2_5");
         if (mydef) {
             MessageBox(NULL, L"text:PyImport_ImportModule", _T("All_Check"), NULL);
-        PyObject* allcheck = PyObject_GetAttrString(mydef, "All_Check");    // All_Check
+        PyObject* allcheck = PyObject_GetAttrString(mydef, "All_Check");
         if (allcheck) {
-            //MessageBox(NULL, L"text: PyObject_GetAttrString", _T("All_Check"), NULL);
-            PyObject* r = PyObject_CallFunction(allcheck, "u", path);   // path
+            MessageBox(NULL, L"text: PyObject_GetAttrString", _T("All_Check"), NULL);
+            PyObject* r = PyObject_CallFunction(allcheck, "u", path);   
             if (r) {
-                //MessageBox(NULL, L"text: PyObject_CallFunction ", _T("All_Check"), NULL);
+                MessageBox(NULL, L"text: PyObject_CallFunction ", _T("All_Check"), NULL);
                 PyArg_Parse(r, "i", &result);  // &result
- 
+                //PyArg_Parse(r, "u", &test);
+                //PyArg_Parse(r, "s", &ttest);
+
                 Py_XDECREF(r);
             }
             Py_XDECREF(allcheck);
@@ -470,9 +474,10 @@ int All_Check(TCHAR* path) {
         Py_XDECREF(mydef);
         //Py_XDECREF(pModule);
     }
-    wsprintf(text, L" test: 0x%08x\n result: 0x%08x\n path: %s\n *path: 0x%08x\n",
-        *test, result, path, (DWORD)path);
+    wsprintf(text, L"ttest: %s\n test: %s\n result: 0x%08x\n path: %s\n *path: 0x%08x\n",
+        ttest, test, result, path, (DWORD)path);
     MessageBox(NULL, text, _T("All_Check"), NULL);
+    //MessageBoxA(NULL, ttest, "All_Check", NULL);
     return result;
 }
 
@@ -544,7 +549,7 @@ int Python(PVOID pImage, HANDLE hProcess)
 
 int Python2(HANDLE  hProcess)
 {
-    TCHAR    sProcessName[MAX_PATH] = { 0, };
+    TCHAR   sProcessName[MAX_PATH] = { 0, };
     DWORD   nSize = sizeof(CHAR) * MAX_PATH;;
     DWORD   nLen = 0;
     //HANDLE  hProcess = GetCurrentProcess();
@@ -567,7 +572,7 @@ int Python2(HANDLE  hProcess)
 
 
     Py_Initialize();
-    PyRun_SimpleString("import sys");
+    PyRun_SimpleString("import sys; sys.path.append('.')");
     //PyRun_SimpleString("import lief");
     //PyRun_SimpleString("import sys; sys.path.append('C:\\Users\\user\\source\\repos\\Yak_project')");
     //PyRun_SimpleString("sys.path.append('C:\\Python37\\Lib\\site-packages')");
@@ -577,10 +582,11 @@ int Python2(HANDLE  hProcess)
         Py_GetPath());
     MessageBox(NULL, text, _T("Current_process2"), NULL);
 
-    int check = All_Check(sProcessName);
+    //TCHAR textt[256] = L"C:\\Users\\user\\source\\repos\\Yak_project\\infected.vir";
+    int check = All_Check(sProcessName);    // "nc.exe" // sProcessName    // "infected.vir"   // C:\Users\user\source\repos\Yak_project\infected.vir"
     Py_Finalize();
     return check;
-
+    
 }
 
 typedef struct _PEB
@@ -715,7 +721,7 @@ BOOL CheckMalware(HANDLE hProcess, DWORD dwPid)
     memset(&pbi, 0, sizeof(pbi));
     //MessageBox(NULL, L"text1", _T("Current_process"), NULL);
     status = pNtQueryInformationProcess(
-        hProcess, // hProcess : calc.exe,   // GetCurrentProcess() : explorer.exe
+        GetCurrentProcess(), // hProcess : calc.exe,   // GetCurrentProcess() : explorer.exe
         ProcessBasicInformation,
         &pbi,
         sizeof(pbi),
@@ -856,37 +862,39 @@ BOOL CheckMalware(HANDLE hProcess, DWORD dwPid)
    //     sizeof(TestSection), TestSection);
    // MessageBox(NULL, text, _T("IMAGE_SECTION_HEADER"), NULL);
 
-     // Get the snapshot of the system
-    pe.dwSize = sizeof(PROCESSENTRY32);
-    hSnapShot = CreateToolhelp32Snapshot(TH32CS_SNAPALL, NULL);
-    if (hSnapShot == INVALID_HANDLE_VALUE)
-    {
-        _tprintf(L"CheckMalware() : CreateToolhelp32Snapshot() failed!!! [%d]",
-            GetLastError());
-        return FALSE;
-    }
+    return result;
 
-    // find process
-    bMore = Process32First(hSnapShot, &pe);
-    for (; bMore; bMore = Process32Next(hSnapShot, &pe))
-    {
-        dwPID = pe.th32ProcessID;
+    // // Get the snapshot of the system
+    //pe.dwSize = sizeof(PROCESSENTRY32);
+    //hSnapShot = CreateToolhelp32Snapshot(TH32CS_SNAPALL, NULL);
+    //if (hSnapShot == INVALID_HANDLE_VALUE)
+    //{
+    //    _tprintf(L"CheckMalware() : CreateToolhelp32Snapshot() failed!!! [%d]",
+    //        GetLastError());
+    //    return FALSE;
+    //}
 
-        // 시스템의 안정성을 위해서
-        // PID 가 100 보다 작은 시스템 프로세스에 대해서는
-        // DLL Injection 을 수행하지 않는다.
-        if (dwPID < 100)
-            continue;
+    //// find process
+    //bMore = Process32First(hSnapShot, &pe);
+    //for (; bMore; bMore = Process32Next(hSnapShot, &pe))
+    //{
+    //    dwPID = pe.th32ProcessID;
 
-        if (!_tcsicmp(pe.szExeFile, szProc))
-        {
-            CloseHandle(hSnapShot);
-            return TRUE;
-        }
-    }
+    //    // 시스템의 안정성을 위해서
+    //    // PID 가 100 보다 작은 시스템 프로세스에 대해서는
+    //    // DLL Injection 을 수행하지 않는다.
+    //    if (dwPID < 100)
+    //        continue;
 
-    CloseHandle(hSnapShot);
-    return FALSE;
+    //    if (!_tcsicmp(pe.szExeFile, szProc))
+    //    {
+    //        CloseHandle(hSnapShot);
+    //        return TRUE;
+    //    }
+    //}
+
+    //CloseHandle(hSnapShot);
+    //return FALSE;
 }
 
 NTSTATUS WINAPI NewZwResumeThread(HANDLE ThreadHandle, PULONG SuspendCount)
