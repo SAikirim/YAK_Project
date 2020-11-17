@@ -1,2 +1,0 @@
-C:\Users\user\source\repos\Yak_project\redirect\Debug\redirect.dll
-C:\Users\user\source\repos\Yak_project\redirect\Debug\redirect.pdb

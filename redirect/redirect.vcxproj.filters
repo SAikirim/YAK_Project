@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="redirect.cpp">
+    <ClCompile Include="MalDetecter.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
