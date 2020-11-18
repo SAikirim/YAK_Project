@@ -15,7 +15,7 @@ try:
 except Exception as e:
     excep = str(e)
     ctypes.windll.user32.MessageBoxW(None, excep, "제목", 0)
-    return 4
+    test = 4
 
 
 ## dos header check
@@ -890,6 +890,9 @@ def All_Check(path):
     except Exception as e:
         return 3
 
+    if test == 4:
+        return 2
+    
     return result
 
 ## test

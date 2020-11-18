@@ -40,7 +40,7 @@ def saveDB(fmd5):
     fp.close()
 
 def whiteListCheck(file_name):
-    #디버거용 : #ctypes.windll.user32.MessageBoxW(None, file_name, "PATH", 0)
+    # ctypes.windll.user32.MessageBoxW(None, file_name, "PATH", 0) # 디버그용
     try:
         fp = open(file_name, 'rb')
         fbuf = fp.read()
