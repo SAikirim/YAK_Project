@@ -382,7 +382,7 @@ int WhiteListCheck(TCHAR* file_name) {
     }
     if (result == 3)
     {
-        wsprintf(text, L"WhiteListCheck() : %d\n", result);
+        wsprintf(text, L"Preprocessing 서버전달 에러 : %d\n", result);
         MessageBox(NULL, text, _T("모델서버 에러"), NULL);
         DebugLog("WhiteListCheck() : whiteListCheck() failed!!! [%d]\n",
             GetLastError());
@@ -396,7 +396,6 @@ int WhiteListCheck(TCHAR* file_name) {
             GetLastError());
         return NULL;
     }
-
     return result;
 }
 
@@ -427,7 +426,6 @@ int Python2(HANDLE  hProcess)
         
     }
     return check;
-   
 }
 
 
@@ -446,9 +444,7 @@ BOOL CheckMalware(HANDLE hProcess, DWORD dwPid)
             GetLastError());
         return NULL;
     }
-
     return result;
-
 }
 
 NTSTATUS WINAPI NewZwResumeThread(HANDLE ThreadHandle, PULONG SuspendCount)
@@ -518,22 +514,23 @@ NTSTATUS WINAPI NewZwResumeThread(HANDLE ThreadHandle, PULONG SuspendCount)
             DebugLog("InjectDll() : OpenProcess(%d) failed!!! [%d]\n", dwPID, GetLastError());
             return NULL;
         }
-            if (CheckMalware(hProcess, dwPID))
+
+        if (CheckMalware(hProcess, dwPID))
+        {
+            wsprintf(text, L"악성코드로 의심되는 프로세스(%d)가 실행되었습니다.\n(악성코드가 아니면 whitelist에 직접 추가해 주세요(소문자사용))\n 종료하시겠습니까??\n", dwPID);
+            if (MessageBox(NULL, text, _T("악성코드 발견!"), MB_ICONASTERISK | MB_YESNO) == IDYES)
             {
-                wsprintf(text, L"악성코드로 의심되는 프로세스(%d)가 실행되었습니다.\n(악성코드가 아니면 whitelist에 직접 추가해 주세요(소문자사용))\n 종료하시겠습니까??\n", dwPID);
-                if (MessageBox(NULL, text, _T("악성코드 발견!"), MB_ICONASTERISK | MB_YESNO) == IDYES)
+                if (!TerminateProcess(hProcess, 0))
                 {
-                    if (!TerminateProcess(hProcess, 0))
-                    {
-                        DebugLog("CheckMalware() : ExitProcess() failed!!!\n");
-                        return NULL;
-                    }
-                }
-                else
-                {
-                    DebugLog("CheckMalware() : ExitProcess() No!!!\n");
+                    DebugLog("CheckMalware() : ExitProcess() failed!!!\n");
+                    return NULL;
                 }
             }
+            else
+            {
+                DebugLog("CheckMalware() : ExitProcess() No!!!\n");
+            }
+        }
         if (hProcess)
             CloseHandle(hProcess);
     }

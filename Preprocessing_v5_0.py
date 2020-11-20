@@ -1,7 +1,6 @@
 ## YAK_Project
 ##  https://github.com/SAikirim/YAK_Project.git
 
-
 test = 0
 try:
     import lief
@@ -16,7 +15,6 @@ except Exception as e:
     excep = str(e)
     ctypes.windll.user32.MessageBoxW(None, excep, "Exception", 0)
     test = 4
-
 
 ## dos header check
 def isDosHeader(binary):
@@ -127,7 +125,7 @@ def isSectionNum(binary):
     section_name=[]
     for section in binary.sections:
         section_name.append(section.name)
-    if len(section_name) > 4:
+    if len(section_name) > 6:
         return True
     else:
         return False
@@ -240,7 +238,7 @@ def isUninit(binary):
 
 # dll check
 def isDll(binary):
-    mal_dll_list=['KERNEL32.DLL','USER32.DLL','GDI32.DLL','ADVAPI32.DLL','OLEAUT32.DLL','MSVBVM60.DLL','OLE32.DLL','COMCTL32.DLL','MSVCRT.DLL','SHELL32.DLL','QT5CORE.DLL','WS2_32.DLL','WININET.DLL','GDIPLUS.DLL','SHLWAPI.DLL','WSOCK32.DLL']
+    mal_dll_list=['ADVAPI32.DLL','OLEAUT32.DLL','MSVBVM60.DLL','OLE32.DLL','COMCTL32.DLL','MSVCRT.DLL','SHELL32.DLL','QT5CORE.DLL','WS2_32.DLL','WININET.DLL','GDIPLUS.DLL','SHLWAPI.DLL','WSOCK32.DLL']
     dll_name=[]
     for dll in binary.libraries:
         dll_name.append(dll)
@@ -277,18 +275,9 @@ def isApi(binary, mal_api_list):
 
     check_api=[0 for i in range(len(mal_api_list))]
     for mal_api in mal_api_list_lower:
-        if mal_api in mal_1:
+        if mal_api in function_name_lower:
             check_index=mal_api_list_lower.index(mal_api)
             check_api[check_index]=1
-        if mal_api in mal_0_8:
-            check_index=mal_api_list_lower.index(mal_api)
-            check_api[check_index]=0.8
-        if mal_api in mal_0_6:
-            check_index=mal_api_list_lower.index(mal_api)
-            check_api[check_index]=0.6
-        if mal_api in mal_0_5:
-            check_index=mal_api_list_lower.index(mal_api)
-            check_api[check_index]=0.5
 
     return check_api
 
@@ -396,12 +385,7 @@ mal_api_list=[
 'GetConsoleCP',
 'GetConsoleMode',
 'GetCurrentDirectoryW',
-'GetCurrentProcess',
-'GetCurrentProcessId',
-'GetCurrentThreadId',
 'GetCurrentThreadld',
-'GetDeviceCaps',
-'GetEnvironmentStringsW',
 'GetEnvironmentVariableW',
 'GetFileAttributesExW',
 'GetFileAttributesW',
@@ -414,27 +398,20 @@ mal_api_list=[
 'GetMessage',
 'GetModuleFilename',
 'GetModuleFileNameA',
-'GetModuleFileNameW',
 'GetModuleHandle',
-'GetModuleHandleA',
-'GetModuleHandleW',
-'GetProcAddress',
 'GetProcessId',
 'GetSecurityInfo',
 'GetStartupInfo',
 'GetStartupInfoA',
-'GetStdHandle',
 'GetSystemDefaultLangId',
 'GetSystemTime',
 'GetTempPath',
 'GetThreadContext',
-'GetTickCount',
 'GetTokenInformation',
 'GetUserNameA',
 'GetVersion',
 'GetVersionEx',
 'GetVersionExA',
-'GetVersionExW',
 'GetWindowsDirectory',
 'GetWindowsThreadProcessId',
 'HeapAlloc',
@@ -446,14 +423,12 @@ mal_api_list=[
 'HttpOpenRequest',
 'HTTPSendRequest',
 'InitializeCriticalSection',
-'InternetCloseHandle',
 'InternetConnect',
 'InternetCrackUrlW',
 'InternetOpen',
 'InternetOpenA',
 'InternetReadFile',
 'ioctlsocket',
-'IsDebuggerPresent',
 'IsNTAdmin',
 'LdrLoadDll',
 'LeaveCriticalSection',
@@ -474,7 +449,6 @@ mal_api_list=[
 'OpenEventA',
 'OpenEventW',
 'OpenMutex',
-'OpenProcess',
 'OpenServiceA',
 'OutputDebugString',
 'PeekNamedPipe',
@@ -518,10 +492,7 @@ mal_api_list=[
 'SHBrowseForFolderA',
 'ShellExecute',
 'ShellExecuteA',
-'ShellExecuteExW',
-'ShellExecuteW',
 'SHFileOperationA',
-'SHFileOperationW',
 'SHGetFileInfoA',
 'SHGetFolderPathW',
 'SHGetPathFromIDListA',
@@ -534,7 +505,6 @@ mal_api_list=[
 'TerminateProcess',
 'Thread32First',
 'TlsAlloc',
-'TlsFree',
 'TlsGetValue',
 'TlsSetValue',
 'Toolhelp32ReadProcessMemory',
@@ -556,283 +526,114 @@ mal_api_list=[
 'WriteProcessMemory',
 'WSAIoctl',
 'WSASocket',
-'WSAStartup'
-]
-mal_1 = [
- 'accept',
- 'shellexecute',
- 'shellexecutea',
- 'shellexecuteexw',
- 'shellexecutew',
- 'unhookwindowshookex',
- 'urldownloadtofile',
- 'urldownloadtofilea',
- 'createmutex',
- 'createmutexa',
- 'createmutexw',
- 'createprocess',
- 'createremotethread',
- 'getcurrentprocess',
- 'getcurrentprocessid',
- 'getcurrentthreadid',
- 'getcurrentthreadld',
- 'exitprocess',
- 'exitthread',
- 'createthread',
- 'writeconsolea',
- 'writeconsolew',
- 'writeprocessmemory',
- 'getcommandlinea',
- 'getcommandlinew',
- 'getconsolecp',
- 'getconsolemode',
- 'getprocaddress',
- 'getprocessid',
- 'process32first',
- 'process32firstw',
- 'process32next',
- 'process32nextw',
- 'readconsolew',
- 'readprocessmemory',
- 'openprocess',
- 'enumprocesses',
- 'suspendthread',
- 'system',
- 'terminateprocess',
- 'thread32first',
-  'connect',
- 'adjusttokenprivileges',
- 'attachthreadinput',
- 'bind',
- 'certopensystemstore',
- 'connectnamedpipe',
- 'controlservice',
- 'createfilemapping',
- 'createfilemappingw',
- 'devicelocontrol',
- 'enumprocessmodules',
- 'findfirstfile',
- 'findresource',
- 'findwindow',
- 'ftpputfile',
- 'getadapterinfo',
- 'getasynckeystate',
- 'getforegroundwindow',
- 'gethostbyname',
- 'gethostname',
- 'getmodulefilename',
- 'getmodulefilenamea',
- 'getmodulefilenamew',
- 'getmodulehandle',
- 'getmodulehandlea',
- 'getmodulehandlew',
- 'getstartupinfo',
- 'getsystemdefaultlangid',
- 'gettemppath',
- 'getthreadcontext',
- 'getversionex',
- 'getversionexa',
- 'getversionexw',
- 'getwindowsdirectory',
- 'isntadmin',
- 'ldrloaddll',
- 'loadresource',
- 'lsaenumeratelogonsessions',
- 'mapviewoffile',
- 'mapvirtualkey',
- 'module32first',
- 'module32next',
- 'netschedulejobadd',
- 'openmutex',
- 'peeknamedpipe',
- 'queueuserapc',
- 'recv',
- 'resumethread',
- 'rtlcreateregistrykey',
- 'rtlwriteregistryvalue',
- 'send',
- 'setfiletime',
- 'setthreadcontext',
- 'setwindowshookex',
- 'setwindowshookexa',
- 'sfcterminatewatcherthread',
- 'toolhelp32readprocessmemory',
- 'virtualalloc',
- 'virtualallocex',
- 'virtualprotect',
- 'virtualprotectex',
- 'widechartomultibyte',
- 'winexec',
- 'wsastartup']
- 
-mal_0_8 = ['regclosekey',
- 'regcreatekey',
- 'regcreatekeyexa',
- 'regcreatekeyexw',
- 'regdeletekeya',
- 'regdeletekeyw',
- 'regdeletevaluea',
- 'regdeletevaluew',
- 'registerhotkey',
- 'regopenkey',
- 'regopenkeyexa',
- 'regopenkeyexw',
- 'regqueryvalueexa',
- 'regqueryvalueexw',
- 'regsetvalue',
- 'regsetvalueexa',
- 'regsetvalueexw',
- 'httpaddrequestheaders',
- 'httpopenrequest',
- 'httpsendrequest',
- 'initializecriticalsection',
- 'internetclosehandle',
- 'internetconnect',
- 'internetcrackurlw',
- 'internetopen',
- 'internetopena',
- 'internetreadfile',
- 'closehandle',
- 'createdirectoryw',
- 'createeventw',
- 'createfile',
- 'createfilea',
- 'createfilew',
- 'createsemaphorew',
- 'createservice',
- 'createtoolgelp32snapshot',
- 'cryptacuirecontext',
- 'deletecriticalsection',
- 'deletefilew',
- 'deleteurlcacheentry',
- 'dispatchmessage',
- 'dllfunctioncall',
- 'duplicatetokenex',
- 'enableexecuteprotectionsupport',
- 'entercriticalsection',
- 'event_sink_addref',
- 'event_sink_queryinterface',
- 'event_sink_release',
- 'findfirsturlcacheentrya',
- 'findnexturlcacheentrya',
- 'freeenvironmentstringsa',
- 'freeenvironmentstringsw',
- 'getcurrentdirectoryw',
- 'getdevicecaps',
- 'getenvironmentstringsw',
- 'getenvironmentvariablew',
- 'getfileattributesexw',
- 'getfileattributesw',
- 'getfilesize',
- 'getfiletype',
- 'getkeystate',
- 'getmessage',
- 'getsecurityinfo',
- 'getstartupinfoa',
- 'getstdhandle',
- 'getsystemtime',
- 'gettickcount',
- 'gettokeninformation',
- 'getusernamea',
- 'getversion',
- 'getwindowsthreadprocessid',
- 'ioctlsocket',
- 'isdebuggerpresent',
- 'leavecriticalsection',
- 'loadlibrarya',
- 'loadlibraryexa',
- 'loadlibraryexw',
- 'loadlibraryw',
- 'localalloc',
- 'localfree',
- 'lockresource',
- 'openeventa',
- 'openeventw',
- 'openservicea',
- 'outputdebugstring',
- 'raiseexception',
- 'releasemutex',
- 'setevent',
- 'shbrowseforfoldera',
- 'shfileoperationa',
- 'shfileoperationw',
- 'shgetfileinfoa',
- 'shgetfolderpathw',
- 'shgetpathfromidlista',
- 'sizeofresource',
- 'socket',
- 'startservicea',
- 'startservicectrldispatcher',
- 'tryentercriticalsection',
- 'unhandledexceptionfilter',
- 'wsaioctl',
- 'wsasocket',
-]
- 
-mal_0_6 = ['heapalloc',
- 'heapdestroy',
- 'heapfree',
- 'heaprealloc',
- 'heapsize',
- 'virtualfree',
- 'virtualquery',
- 'tlsalloc',
- 'tlsfree',
- 'tlsgetvalue',
- 'tlssetvalue']
-
-mal_0_5 = [
-'__vbachkstk',
- '__vbaend',
- '__vbaerroroverflow',
- '__vbaexcepthandler',
- '__vbafpexception',
- '__vbafpi4',
- '__vbafreeobj',
- '__vbafreestr',
- '__vbafreevar',
- '__vbafreevarlist',
- '__vbahresultcheckobj',
- '__vbainstr',
- '__vbalenbstrb',
- '__vbalenvarb',
- '__vbanew2',
- '__vbaobjsetaddref',
- '__vbasetsystemerror',
- '__vbastrmove',
- '__vbastrvarmove',
- '__vbaubound',
- '__vbavaradd',
- '__vbavarmove',
- '__vbavartsteq',
- '__vbavartstgt',
- '_adj_fdiv_m16i',
- '_adj_fdiv_m32',
- '_adj_fdiv_m32i',
- '_adj_fdiv_m64',
- '_adj_fdiv_r',
- '_adj_fdivr_m16i',
- '_adj_fdivr_m32',
- '_adj_fdivr_m32i',
- '_adj_fdivr_m64',
- '_adj_fpatan',
- '_adj_fprem',
- '_adj_fprem1',
- '_adj_fptan',
- '_allmul',
- '_ciatan',
- '_cicos',
- '_ciexp',
- '_cilog',
- '_cisin',
- '_cisqrt',
- '_citan']
+'WSAStartup',
+'_CorDllMain',
+'ZP',
+'AnyPopup',
+'DnsValidateName_W',
+'AccessCheckAndAuditAlarmA',
+'DnsApiFree',
+'DnsNameCompare_W',
+'EnumPropsExA',
+'AccessCheckByTypeResultListAndAuditAlarmW',
+'BroadcastSystemMessage',
+'CreateDesktopA',
+'BRUSHOBJ_ulGetBrushColor',
+'LZSeek',
+'CoInstall',
+'CoSetState',
+'BaseQueryModuleData',
+'WSApSetPostRoutine',
+'lstrcpyn',
+'GetInterfaceInfo',
+'DeleteColorSpace',
+'SetSystemMenu',
+'GetAltTabInfoW',
+'TileChildWindows',
+'PaintDesktop',
+'SetDeskWallpaper',
+'MessageBoxTimeoutA',
+'midiStreamProperty',
+'DragObject',
+'DrawCaptionTempA',
+'SetUserObjectInformationA',
+'BroadcastSystemMessageExW',
+'FoldStringA',
+'EngCreateClip',
+'DrawFrame',
+'MenuWindowProcW',
+'WriteProfileSectionW',
+'EraseTape',
+'ChangeMenuW',
+'GetAltTabInfoA',
+'LoadKeyboardLayoutEx',
+'OemKeyScan',
+'GetInternalWindowPos',
+'EnumPropsW',
+'SetInternalWindowPos',
+'OpenWaitableTimerA',
+'MessageBoxTimeoutW',
+'SetProgmanWindow',
+'GetInputDesktop',
+'AllowForegroundActivation',
+'BroadcastSystemMessageExA',
+'IsDialogMessage',
+'SetDefaultCommConfigW',
+'MenuWindowProcA',
+'LZRead',
+'TranslateMessageEx',
+'DeleteVolumeMountPointA',
+'EnumDateFormatsExA',
+'LoadAlterBitmap',
+'AlignRects',
+'AccessCheckByTypeResultListAndAuditAlarmA',
+'GetProgmanWindow',
+'PrivateExtractIconExA',
+'PrivilegedServiceAuditAlarmW',
+'EditWndProc',
+'SetComputerNameExA',
+'ShowStartGlass',
+'IsGUIThread',
+'AddRefActCtx',
+'WantArrows',
+'CopyLZFile',
+'dwLBSubclass',
+'GetListBoxInfo',
+'ResetWriteWatch',
+'AccessCheckByTypeResultListAndAuditAlarmByHandleA',
+'_sleep',
+'DrawMenuBarTemp',
+'EnumPropsExW',
+'SetProcessPriorityBoost',
+'dwOKSubclass',
+'GetTapeParameters',
+'SetCursorContents',
+'CascadeChildWindows',
+'GetVolumePathNameA',
+'SetWindowsHookW',
+'_ctype',
+'CancelDC',
+'PrepareTape',
+'GetMUILanguage',
+'ImageList_GetFlags',
+'MoveFileWithProgressA',
+'SetMessageExtraInfo',
+'ConvertToAutoInheritPrivateObjectSecurity',
+'ScrollChildren',
+'AddAuditAccessAce',
+'GetTapeStatus',
+'BRUSHOBJ_pvAllocRbrush',
+'DllCanUnloadNow',
+'GetProfileSectionW',
+'WSAEnumNameSpaceProvidersA',
+'SetColorSpace']
 
 
 def All_Check(path):
     tmp = [0 for i in range(10)]
     binary = lief.parse(path)
 
+        
     # Dos Header 
     if isDosHeader(binary):
         tmp[0] = 1
@@ -847,7 +648,7 @@ def All_Check(path):
         
     # dll character
     if isDllCha(binary):
-        tmp[3] = 0.6
+        tmp[3] = 1
         
     # packing 
     if isPacking(binary):
@@ -855,29 +656,28 @@ def All_Check(path):
         
     # section_num(binary)
     if isSectionNum(binary):
-        tmp[5] = 0.4
+        tmp[5] = 1
         
-    # string IP, URL
+    # string IP, URL 
     tmp[6], tmp[7] = ip_URL_search(path)
         
     # XOR 
     if isXor(path, mal_api_list):
-        tmp[8] =0.8
+        tmp[8] = 1
 
     # sizeof_uninitialized_data
     if isUninit(binary):
-        tmp[9] =0.5
-
+        tmp[6] = 1
+    
     # dll
     dll_tmp = isDll(binary)
     tmp += dll_tmp
-
+    
     # api 
     api_tmp = isApi(binary, mal_api_list)
     tmp += api_tmp
-
+    
     print(len(tmp))
-
     # Model Deliver
     try:
         myurl = 'http://192.168.10.140:5000/predict'
@@ -887,6 +687,8 @@ def All_Check(path):
         response = requests.post(myurl, data=pickle.dumps(tmp), headers=headers)
         result = response.json()['result']
     except Exception as e:
+        excep = str(e)
+        ctypes.windll.user32.MessageBoxW(None, excep, "Exception", 0)
         return 3
 
     if test == 4:
@@ -896,8 +698,10 @@ def All_Check(path):
 
 ## test
 if __name__ == "__main__":
-    #path = r"C:\Users\user\source\repos\Yak_project\nomal.vir"
+    #path = r"C:\Users\user\source\repos\Yak_project\nomal1.vir"
+    path = r"C:\Users\user\source\repos\Yak_project\nomal2.vir"
     #path = r"C:\Windows\System32\calc.exe"
-    #path = "nc.exe"
-    path = 'C:/Users/user/source/repos/Yak_project/infected2.vir'
+    #path = 'C:/Users/user/source/repos/Yak_project/infected.vir'
+    #path = 'C:/Users/user/source/repos/Yak_project/infected2.vir'
+    #path = 'C:/Users/user/source/repos/Yak_project/infected3.vir'
     print(All_Check(path))

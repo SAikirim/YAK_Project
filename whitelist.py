@@ -3,7 +3,7 @@
 
 import hashlib
 import ctypes
-from preprocessing_v3_1 import All_Check
+from Preprocessing_v5_0 import All_Check
 
 ##디버거용 : #ctypes.windll.user32.MessageBoxW(None, "file_name", "임포트", 0)
 
@@ -60,12 +60,13 @@ def whiteListCheck(file_name):
                 return 0
             else:
                 continue
-        # 화이트 리스트에 없으므로 딥러닝으로 검사..
+        # 화이트 리스트에 없으므로 딥러닝으로 검사
         result = All_Check(file_name)
     except Exception as e:
             excep = str(e)
             ctypes.windll.user32.MessageBoxW(None, excep, "Exception", 0)
             return 4
+        
     if 0 == result:
         saveDB(fmd5)
         add_whitelist = "Whitelist를 추가하였습니다."
@@ -76,7 +77,12 @@ def whiteListCheck(file_name):
         
 
 if __name__ == "__main__":
+    #path = r"C:\Users\user\source\repos\Yak_project\nomal1.vir"
+    #path = r"C:\Users\user\source\repos\Yak_project\nomal2.vir"
+    #path = r"C:\Users\user\source\repos\Yak_project\nomal3.vir"
+    path = r"C:\Program Files\Internet Explorer\iexplore.exe"
     #path = r"C:\Windows\System32\calc.exe"
+    #path = 'C:/Users/user/source/repos/Yak_project/infected.vir'
     #path = 'C:/Users/user/source/repos/Yak_project/infected2.vir'
-    path = 'C:/Users/user/source/repos/Yak_project/nomal.vir'
+    #path = 'C:/Users/user/source/repos/Yak_project/infected3.vir'
     print(whiteListCheck(path))
