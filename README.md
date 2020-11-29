@@ -11,6 +11,8 @@
 
 - MalDetecter**.dll(32bit)**
     - 글로벌 후킹 기능
+    - whitelist 확인 가능
+    - server와 통신
     - 새로 만들어지는 자식 프로세스를 확인후
         - True : 프로세스 종료
         - False : 프로세스 통과
@@ -43,7 +45,7 @@
 
 - win_xp / win_7(32bit)
     - Python(v3.7.2)
-        - pip로 설치한 패키지 : lief(0.10.1), requests**(**2.25.0**)**
+        - pip로 설치한 패키지 : lief(0.10.1), requests(2.25.0)
 - wint_7(32bit)
     - Python(v3.8.6)
         - pip로 설치한 패키지 :  Flask(1.1.2), tesnsorflow(2.3.1), Keras(2.4.3), 기타 선행 패키지
@@ -56,10 +58,10 @@
 
 ---
 
-1. **whitelist.py와 preprocessing**_vX.X.py를 파이썬 라이브러리에 복사한다.
+1. whitelist.py와 preprocessing.py를 파이썬 라이브러리에 복사한다.
     - Ex) 'C:\Python37\Lib'에 복사
 2. 관리자 권한으로 콘솔 명령창을 실행시킨다.
-3. yak**.exe와** MalDetecter.dll이 존재하는 폴더에서 파일 실행
+3. yak.exe와 MalDetecter.dll이 존재하는 폴더에서 파일 실행
     1. `yak.exe -i` :  'explorer.exe'에 MalDetecter.dll을 인젝션한다.
     2. `yak.exe -e` :  인젝션 한 'MalDetecter.dll'을 이젝션한다.
 
