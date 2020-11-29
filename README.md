@@ -29,9 +29,6 @@
     - 검사 후, 악성코드로 판별되면 whitelist에 해쉬값 자동 저장
 
 - **server.py(64bit)**
-
-    [server.py](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/deef3ca6-658b-4871-89bf-eed520da0fb7/server.py)
-
     - preprocessing_vX.X.py로부터 받은 데이터로 모델 예측함
     - 0과 1로 예측값을 리턴함
 
