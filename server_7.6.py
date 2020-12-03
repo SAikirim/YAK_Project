@@ -15,7 +15,7 @@ shape = len(test0)
 print(shape)
 
 x_test_df = pd.DataFrame(test0).values.reshape(1, shape)
-model = load_model("model_v7_6_94026.h5")
+model = load_model("model_v7_6_940533.h5")
 result = int(np.round(model.predict(x_test_df)))
 
 print(result)
