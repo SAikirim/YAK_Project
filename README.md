@@ -19,7 +19,7 @@
     - 프로세스를 종료하기 전에 메시지박스를 출력해 '종료 여부' 확인 가능
 
 
-- **preprocessing_vX.X.py(32bit)**
+- **preprocessing.py(32bit)**
     - 파일 정보를 전달 받은 후 배열로 값 전처리
     - 전처리 후 server로 데이터 전달
 
@@ -54,7 +54,7 @@
 
 ## 사용법
 
-1. 서버로 사용될 win_7(64bit)에 server.py와 moel_vX.X.h5를 같은 폴더에 둔다
+1. 서버로 사용될 win_7(64bit)에 server.py와 moel.h5를 같은 폴더에 둔다
 2. 콘솔 명령창에서 server.py를 실행시킨다.
     - Ex) `python server.py`
 
