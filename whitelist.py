@@ -3,7 +3,7 @@
 
 import hashlib
 import ctypes
-from Preprocessing_v5_0 import All_Check
+from Preprocessing_v7_6 import All_Check
 
 ##디버거용 : #ctypes.windll.user32.MessageBoxW(None, "file_name", "임포트", 0)
 
@@ -80,9 +80,9 @@ if __name__ == "__main__":
     #path = r"C:\Users\user\source\repos\Yak_project\nomal1.vir"
     #path = r"C:\Users\user\source\repos\Yak_project\nomal2.vir"
     #path = r"C:\Users\user\source\repos\Yak_project\nomal3.vir"
-    path = r"C:\Program Files\Internet Explorer\iexplore.exe"
-    #path = r"C:\Windows\System32\calc.exe"
-    #path = 'C:/Users/user/source/repos/Yak_project/infected.vir'
+    #path = r"C:\Program Files\Internet Explorer\iexplore.exe"
+    path = r"C:\Windows\System32\calc.exe"
+    #path = 'C:/Users/user/source/repos/Yak_project/infected1.vir'
     #path = 'C:/Users/user/source/repos/Yak_project/infected2.vir'
     #path = 'C:/Users/user/source/repos/Yak_project/infected3.vir'
     print(whiteListCheck(path))
