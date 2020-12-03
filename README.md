@@ -48,7 +48,7 @@
 - win_xp / win_7(32bit)
     - Python(v3.7.2)
         - pip로 설치한 패키지 : lief(0.10.1), requests(2.25.0)
-- wint_7(32bit)
+- wint_7(64bit)
     - Python(v3.8.6)
         - pip로 설치한 패키지 :  Flask(1.1.2), tesnsorflow(2.3.1), Keras(2.4.3), 기타 선행 패키지
 
