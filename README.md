@@ -28,7 +28,7 @@
     - 검사 후, 악성코드로 판별되면 whitelist에 해쉬값 자동 저장
 
 - **server.py(64bit)**
-    - preprocessing_vX.X.py로부터 받은 데이터로 모델 예측함
+    - preprocessing.py로부터 받은 데이터로 모델 예측함
     - 0과 1로 예측값을 리턴함
 
 - **strings.exe**
