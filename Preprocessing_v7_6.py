@@ -1462,6 +1462,7 @@ mal_api_list=[
 '__vbaDerefAry1']
 
 test = 0
+import ctypes
 try:
     import lief
     import datetime
@@ -1470,7 +1471,7 @@ try:
     import re
     import requests
     import pickle
-    import ctypes
+    import subprocess
 except Exception as e:
     excep = str(e)
     ctypes.windll.user32.MessageBoxW(None, excep, "Exception", 0)
@@ -1639,7 +1640,9 @@ def binary_string(path):
         data = fd_popen.read().split()
         fd_popen.close()
         return data
-    except:
+    except Exception as e:
+        excep = str(e)
+        ctypes.windll.user32.MessageBoxW(None, excep, "Exception", 0)
         return None
 
 

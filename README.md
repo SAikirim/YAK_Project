@@ -4,12 +4,12 @@
 
 ## 기능
 
-- yak**.exe(32bit)**
+- **yak.exe(32bit)**
     - 전체 또는 특정 프로세스에 대해 후킹하여 DLL 인젝션 가능
         - 'explorer.exe'에만 인젝션하도록 변경
     - 인젝션, 이젝션 가능
 
-- MalDetecter**.dll(32bit)**
+- **MalDetecter.dll(32bit)**
     - 글로벌 후킹 기능
     - whitelist 확인 가능
     - server와 통신
@@ -17,8 +17,7 @@
         - True : 프로세스 종료
         - False : 프로세스 통과
     - 프로세스를 종료하기 전에 메시지박스를 출력해 '종료 여부' 확인 가능
-    - ~~(11/06)메모리 추출 완료~~
-        - ~~PE헤더에서 구조체를 사용해 원하는 값을 추출 가능~~
+
 
 - **preprocessing_vX.X.py(32bit)**
     - 파일 정보를 전달 받은 후 배열로 값 전처리
@@ -31,6 +30,12 @@
 - **server.py(64bit)**
     - preprocessing_vX.X.py로부터 받은 데이터로 모델 예측함
     - 0과 1로 예측값을 리턴함
+
+- **strings.exe**
+	- IP와 URL의 string을 추출하기위한 외부 프로그램
+	
+- **model_v7_6_940533.h5**
+	- v7.6 버전의 에이전트에 쓰는 딥러닝 모델
 
 ### 에이전트 파일 공유
 
@@ -55,7 +60,7 @@
 
 ---
 
-1. whitelist.py와 preprocessing.py를 파이썬 라이브러리에 복사한다.
+1. whitelist.py, preprocessing.py, strings.exe를 파이썬 라이브러리에 복사한다.
     - Ex) 'C:\Python37\Lib'에 복사
 2. 관리자 권한으로 콘솔 명령창을 실행시킨다.
 3. yak.exe와 MalDetecter.dll이 존재하는 폴더에서 파일 실행
@@ -76,7 +81,8 @@
     - numpy와 같이 임포트시 1번은 제대로 작동
     - sys.exit()로 문제 해결
         - 리턴값이 재대로 출력이 안되는 문제점이 생김
-
+- ~~(11/06)메모리 추출 완료~~
+	- ~~PE헤더에서 구조체를 사용해 원하는 값을 추출 가능~~
 ---
 
 - (11/12) 구조체를 이용해 특정 값을 Python에게 넘기는게 가능

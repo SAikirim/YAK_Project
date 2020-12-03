@@ -27,14 +27,7 @@ def loadDB():
 
 # 검사 종료 후 md5_hash.txt 에 저장하기
 def saveDB(fmd5):
-##    fp = open(file_name, 'rb')
-##    fbuf = fp.read()
-##    fp.close()
-##
-##    m = hashlib.md5()
-##    m.update(fbuf)
-##    fmd5 = m.hexdigest()
-    
+   
     fp = open('C:\\Users\\user\\Desktop\\md5_hash.txt', 'a')
     fp.write('{0}\n'.format(fmd5))
     fp.close()
